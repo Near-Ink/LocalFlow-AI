@@ -10,7 +10,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from . import __app_name__, __version__
-from .api import agent, attach, cache, chat, cloud, context, hardware, models, openai, plugins, sessions, settings, wizard, workflow, workspace
+from .api import agent, attach, cache, chat, cloud, context, dsh, hardware, models, openai, plugins, sessions, settings, wizard, workflow, workspace
 from .deps import get_app
 
 
@@ -64,3 +64,4 @@ app.include_router(plugins.router)
 app.include_router(workflow.router)
 app.include_router(openai.router)
 app.include_router(workspace.router)
+app.include_router(dsh.router)
