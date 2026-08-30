@@ -2,8 +2,8 @@
   "name": "dsh-profile-headless",
   "private": true,
   "dependencies": {
-    "@local/file-workspace-preview": "link:/Users/zhanghaoran/Documents/LocalFlow AI/dsh-poc/packages/file-workspace-preview",
-    "@local/my-hello-plugin": "link:/Users/zhanghaoran/Documents/LocalFlow AI/dsh-poc/packages/my-hello-plugin"
+    "@local/file-workspace-preview": "link:../../packages/file-workspace-preview",
+    "@local/my-hello-plugin": "link:../../packages/my-hello-plugin"
   },
   "dsh": {
     "profile": {

@@ -765,6 +765,15 @@ footer{margin-left:232px;padding:8px 20px;font-size:11px;color:var(--muted);back
 /* ── 对话页内嵌 DeepSeek Harness ──────── */
 #view-chat{padding:0;}
 #dsh-frame{flex:1;min-height:0;width:100%;height:100%;border:none;background:#fff;}
+.dsh-guide{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#f4f6fb;z-index:20;}
+.dsh-guide-card{max-width:480px;padding:28px 30px;border-radius:14px;background:#fff;box-shadow:0 8px 30px rgba(30,41,99,.12);text-align:left;}
+.dsh-guide-card h2{margin:6px 0 10px;font-size:18px;color:#1e293b;}
+.dsh-guide-logo{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#2563eb,#7c3aed);color:#fff;font-weight:700;font-size:24px;display:flex;align-items:center;justify-content:center;}
+.dsh-guide-steps{margin:12px 0;padding-left:20px;color:#475569;font-size:13px;line-height:1.7;}
+.dsh-guide-steps pre{margin:6px 0;padding:8px 10px;background:#0f172a;color:#e2e8f0;border-radius:8px;font-size:12px;overflow:auto;}
+.dsh-guide-tip{margin-top:12px;font-size:12px;color:#94a3b8;}
+.btn-primary{margin-top:10px;padding:9px 18px;border:none;border-radius:8px;background:#2563eb;color:#fff;font-size:14px;cursor:pointer;}
+.btn-primary:hover{background:#1d4ed8;}
 /* 本地对话区历史/输入已由 dsh 承担，隐藏本地原有控件 */
 #view-chat .chat-scroll,
 #view-chat .input-bar,
@@ -869,6 +878,24 @@ footer{margin-left:232px;padding:8px 20px;font-size:11px;color:var(--muted);back
   <!-- 对话视图：内嵌 DeepSeek Harness（聊天统一由 dsh 承担） -->
   <main class="view active" id="view-chat">
     <iframe id="dsh-frame" src="about:blank" title="DeepSeek Harness"></iframe>
+    <!-- dsh 不可达时的引导卡（方案 A：不因缺失 dsh 而白屏） -->
+    <div id="dsh-guide" class="dsh-guide" hidden>
+      <div class="dsh-guide-card">
+        <div class="dsh-guide-logo">L</div>
+        <h2>对话引擎未连接</h2>
+        <p>LocalFlow 的对话与 Agent 能力由 <b>DeepSeek Harness（dsh）</b> 提供，当前未在
+          <code id="dsh-host-hint">127.0.0.1:8080</code> 检测到 dsh 服务。</p>
+        <ol class="dsh-guide-steps">
+          <li>安装并启动 dsh（任选其一）：
+            <pre>npx @deepseek-ai/dsh --profile web</pre>
+            或在仓库 <code>dsh-poc/</code> 下：<pre>pnpm install &amp;&amp; pnpm run dev</pre>
+          </li>
+          <li>确认 dsh 已监听 <code>8080</code> 后，点击下方「重新连接」。</li>
+        </ol>
+        <button id="dsh-retry" class="btn-primary">重新连接</button>
+        <p class="dsh-guide-tip">未安装 dsh 也可使用「部署模型 / 硬件监控 / 对外 API / 设置」等本地功能。</p>
+      </div>
+    </div>
     <div class="chat-scroll" id="chat-scroll">
       <div class="chat-inner" id="chat-inner">
         <div class="empty-state" id="empty-state">
@@ -1077,9 +1104,26 @@ async function getApiBase(){
   initCloudSheet();
   initEnginePill();
   // ── 对话页内嵌 DeepSeek Harness ────────
-  const _dshHost = location.hostname || '127.0.0.1';
+  const _dshBase = (window.localflow && window.localflow.getDshBase)
+    ? await window.localflow.getDshBase() : 'http://127.0.0.1:8080';
   const _df = document.getElementById('dsh-frame');
-  if(_df) _df.src = 'http://' + _dshHost + ':8080/?v=' + Date.now();
+  const _guide = document.getElementById('dsh-guide');
+  const _hint = document.getElementById('dsh-host-hint');
+  if(_hint) _hint.textContent = _dshBase.replace(/^https?:\/\//, '');
+  function setDshSrc(){
+    if(_df) _df.src = _dshBase + '/?v=' + Date.now();
+  }
+  function showDshGuide(show){
+    if(_guide) _guide.hidden = !show;
+  }
+  // dsh 不可达 → 显示引导卡而非白屏；可达 → 加载 iframe
+  if(window.localflow && window.localflow.onDshStatus){
+    window.localflow.onDshStatus((up)=>{ showDshGuide(!up); if(up) setDshSrc(); });
+  }
+  // 初始状态：先探一次（主进程会推送 dsh-status）；同时给一个保底轮询
+  if(_df) setDshSrc();
+  const _retry = document.getElementById('dsh-retry');
+  if(_retry) _retry.addEventListener('click', ()=>{ setDshSrc(); showDshGuide(false); });
   // ── 平移注意 ────────────────
   // Agent 功能 / 工作流 / 固定展示页已移除前端入口，交由 dsh 承担。
   // 保留代码以备回退：恢复入口时取消下列注释即可。
@@ -4892,7 +4936,7 @@ function clearAttachments(){ attachedFiles = []; renderAttachStrip(); }
     const v = document.getElementById('view-hardware');
     if(!v || v.offsetParent === null) return;          // 硬件页不可见时跳过
     try{
-      const r = await fetch('/api/cache/stats');
+      const r = await fetch(API + '/api/cache/stats');
       const j = await r.json();
       if(!j.ok) throw 0;
       const st = j.stats || {};
@@ -4952,13 +4996,13 @@ const AgentInspect = {
     this.artEl.appendChild(card);
     const p = encodeURIComponent(art.path||'');
     if(art.type==='image'){
-      fetch('/api/agent/artifact?path='+p).then(r=>r.json()).then(j=>{
+      fetch(API + '/api/agent/artifact?path='+p).then(r=>r.json()).then(j=>{
         if(j && j.ok && j.artifact && j.artifact.base64){
           body.innerHTML = `<img src="data:${esc(j.artifact.mime||'image/png')};base64,${j.artifact.base64}" alt="">`;
         } else body.innerHTML='<div class="ai-art-info">无法加载图片预览</div>';
       }).catch(()=>{ body.innerHTML='<div class="ai-art-info">图片预览加载失败</div>'; });
     }else if(art.type==='html'){
-      fetch('/api/agent/artifact?path='+p).then(r=>r.json()).then(j=>{
+      fetch(API + '/api/agent/artifact?path='+p).then(r=>r.json()).then(j=>{
         if(j && j.ok && typeof j.artifact.text==='string'){
           body.innerHTML='<iframe sandbox=""></iframe>';
           body.querySelector('iframe').srcdoc = j.artifact.text;
@@ -4971,7 +5015,7 @@ const AgentInspect = {
       if(typeof art.preview==='string'){
         body.innerHTML = `<pre>${esc(art.preview)}</pre>`;
       }else{
-        fetch('/api/agent/artifact?path='+p).then(r=>r.json()).then(j=>{
+        fetch(API + '/api/agent/artifact?path='+p).then(r=>r.json()).then(j=>{
           if(j && j.ok && typeof j.artifact.text==='string') body.innerHTML=`<pre>${esc(j.artifact.text)}</pre>`;
           else body.innerHTML='<div class="ai-art-info">无法加载文本预览</div>';
         }).catch(()=>{ body.innerHTML='<div class="ai-art-info">文本预览加载失败</div>'; });

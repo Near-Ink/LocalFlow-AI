@@ -7,6 +7,9 @@ pydantic>=2.6.0
 # 系统监控
 psutil>=5.9.0
 
+# 文档解析（/api/attach/parse 解析 PDF）
+pypdf>=4.0.0
+
 # NVIDIA GPU 监控（可选，没有 NVIDIA 也能跑）
 nvidia-ml-py>=12.535.108; platform_system == "Linux" or platform_system == "Windows"
 

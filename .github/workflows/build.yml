@@ -58,6 +58,14 @@ jobs:
             -o -f dist/localflow-backend/localflow-backend.exe
           echo "后端打包完成: $(ls dist/localflow-backend | wc -l) 个文件"
 
+      - name: Run backend unit tests
+        working-directory: backend
+        shell: bash
+        run: |
+          pip install pytest 2>/dev/null || pip install --break-system-packages pytest
+          # 仅跑不依赖外部服务的单元测试；test_openai_key.py 需活后端，手动运行
+          PYTHONPATH=. python -m pytest tests/test_react_agent.py tests/test_sandbox.py -q
+
       - name: Setup Node 22
         uses: actions/setup-node@v4
         with:

@@ -168,12 +168,14 @@ def _main():
     print("ALL REACT-AGENT UNIT TESTS PASSED")
 
 
-async def test_all():
-    await _run_ok()
-    await _confirm_flow()
-    await _reject_flow()
-    await _unknown_tool_falls_back()
-    await _max_steps_trims()
+def test_all():
+    async def _run():
+        await _run_ok()
+        await _confirm_flow()
+        await _reject_flow()
+        await _unknown_tool_falls_back()
+        await _max_steps_trims()
+    asyncio.run(_run())
 
 
 if __name__ == "__main__":

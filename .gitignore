@@ -49,3 +49,11 @@ dsh-poc/ui-screenshots/
 
 # 工具私有产物
 .trae-html-share-packages/
+
+# 项目记忆 / 本地助手数据（不提交）
+.workbuddy/
+
+# 运行时日志与临时产物（不提交）
+*.log
+backend/runtime_data/*.log
+backend/nohup.out

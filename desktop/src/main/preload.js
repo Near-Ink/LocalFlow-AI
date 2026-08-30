@@ -4,5 +4,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('localflow', {
   getAppInfo: () => ipcRenderer.invoke('app:get-info'),
   getApiBase: () => ipcRenderer.invoke('app:api-base'),
+  getDshBase: () => ipcRenderer.invoke('app:dsh-base'),
   pickDirectory: () => ipcRenderer.invoke('app:pick-directory'),
+  onDshStatus: (cb) => ipcRenderer.on('dsh-status', (_e, up) => cb(up)),
 });

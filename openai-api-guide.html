@@ -234,8 +234,11 @@ print(resp.choices[0].message.content)</code></pre>
 <h2>9. 安全提醒</h2>
 <div class="warnbox">
   <ul style="margin:0">
-    <li>默认后端只监听 <b>127.0.0.1</b>，仅本机进程可访问——别改为 <code>0.0.0.0</code>
-        或做公网映射，除非你确认网络环境安全。</li>
+    <li>后端默认绑定 <b>127.0.0.1</b>，仅本机进程可访问。如需局域网内其它设备访问，
+        必须同时满足两点：① 以 <code>--host 0.0.0.0</code> 启动后端；② <b>先设置
+        <code>LOCALFLOW_API_KEY</code></b>，否则任意同网设备/网页都能驱动你的本机 Agent（含文件与命令工具）。</li>
+    <li>跨源访问控制（CORS）仅放行本机可信源（Electron 渲染进程的 <code>file://</code> 与本机回环），
+        外部网页的跨域请求会被浏览器拒绝，但这<b>不等于</b>可以裸奔在 <code>0.0.0.0</code> 上——非浏览器客户端（curl 等）仍可达。</li>
     <li>强烈建议始终设置 <code>LOCALFLOW_API_KEY</code>，防止本机其它网页脚本偷偷调用你的模型。</li>
     <li>密钥对待，别写进共享代码或提交到仓库。</li>
   </ul>

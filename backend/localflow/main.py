@@ -32,12 +32,21 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS（Electron 前端 + 开发用）
+# CORS：只允许本机可信源（Electron 渲染进程的 file://、本机回环）。
+# 关键安全约束：跨站网页（如 https://evil.com）的 Origin 不匹配正则 → 被拒绝，
+# 从而杜绝「任意网页驱动本机 Agent（文件/命令工具）」的攻击面。
+# 仅用 Bearer Token 鉴权，不依赖 cookie，故不开启 allow_credentials。
+# 仅放行本机可信源：file://（Electron 渲染进程，前缀匹配含完整路径）、null、
+# 以及本机回环 127.0.0.1 / localhost。跨站网页（如 https://evil.com）不匹配 → 被拒绝。
+_ALLOWED_ORIGIN_REGEX = (
+    r"^(file://.*|null$|http://127\.0\.0\.1(:[0-9]+)?$|"
+    r"http://localhost(:[0-9]+)?)$"
+)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
+    allow_origin_regex=_ALLOWED_ORIGIN_REGEX,
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 

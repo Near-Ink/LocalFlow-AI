@@ -12,6 +12,34 @@ let backendProc = null;
 const BACKEND_PORT = 8765;
 const BACKEND_HEALTH_URL = `http://127.0.0.1:${BACKEND_PORT}/api/health`;
 
+// DeepSeek Harness（dsh）：对话与 Agent 能力由它提供，默认 8080。
+// 安装包不内嵌 dsh（方案 A：引导用户自备），故只探测、不拉起。
+const DSH_PORT = 8080;
+const DSH_BASE = process.env.LOCALFLOW_DSH_HOST
+  ? `http://${process.env.LOCALFLOW_DSH_HOST}`
+  : `http://127.0.0.1:8080`;
+const DSH_HEALTH_URL = `${DSH_BASE}/`;
+
+/** 探测 dsh 是否在运行（方案 A：仅探测，不拉起） */
+function isDshUp(timeoutMs = 1500) {
+  return new Promise((resolve) => {
+    const req = http.get(DSH_HEALTH_URL, (res) => {
+      res.resume();
+      resolve(true);
+    });
+    req.setTimeout(timeoutMs, () => { req.destroy(); resolve(false); });
+    req.on('error', () => resolve(false));
+  });
+}
+
+/** 周期推送 dsh 可达状态给渲染进程，驱动「引导卡 / 对话页」切换 */
+async function monitorDsh(win) {
+  if (!win || win.isDestroyed()) return;
+  const up = await isDshUp();
+  try { win.webContents.send('dsh-status', up); } catch (e) { /* ignore */ }
+  setTimeout(() => monitorDsh(win), 5000);
+}
+
 /** 探测后端是否已在运行（避免重复拉起） */
 function isBackendUp(timeoutMs = 800) {
   return new Promise((resolve) => {
@@ -91,6 +119,7 @@ function createWindow() {
 app.whenReady().then(() => {
   createWindow();
   ensureBackend(); // 不阻塞窗口创建
+  monitorDsh(mainWindow); // dsh 状态周期探测并推送给前端
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -124,6 +153,11 @@ ipcMain.handle('app:get-info', () => {
 ipcMain.handle('app:api-base', () => {
   // 后端 API 地址（默认本地 8765）
   return process.env.LOCALFLOW_API || `http://127.0.0.1:${BACKEND_PORT}`;
+});
+
+ipcMain.handle('app:dsh-base', () => {
+  // DeepSeek Harness 地址（默认本地 8080）
+  return DSH_BASE;
 });
 
 ipcMain.handle('app:pick-directory', async () => {

@@ -2,7 +2,7 @@
   "name": "dsh-profile-web",
   "private": true,
   "dependencies": {
-    "@local/file-workspace-preview": "link:/Users/zhanghaoran/Documents/LocalFlow AI/dsh-poc/packages/file-workspace-preview"
+    "@local/file-workspace-preview": "link:../../packages/file-workspace-preview"
   },
   "dsh": {
     "profile": {

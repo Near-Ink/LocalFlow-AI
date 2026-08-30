@@ -15,7 +15,7 @@ from PyInstaller.utils.hooks import collect_all
 # 动态导入较重的依赖：FastAPI / uvicorn / pydantic / psutil 的隐藏模块
 datas, binaries, hiddenimports = [], [], []
 
-for pkg in ("uvicorn", "fastapi", "pydantic", "psutil", "httpx", "multipart", "sse_starlette", "starlette", "anyio", "websockets", "h11", "click"):
+for pkg in ("uvicorn", "fastapi", "pydantic", "psutil", "httpx", "pypdf", "multipart", "sse_starlette", "starlette", "anyio", "websockets", "h11", "click"):
     try:
         d, b, h = collect_all(pkg)
         datas += d

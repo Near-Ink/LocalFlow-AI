@@ -1,6 +1,9 @@
 # LocalFlow AI Backend
 
-本地 AI 桌面平台后端 — Python + FastAPI + LangGraph。
+本地 AI 桌面平台后端 — Python + FastAPI（Port & Adapter 六边形架构）。
+
+> 注：子任务调度目前为自研 LLM 拆分骨架（`adapters/langgraph_scheduler.py`，名字沿用历史），
+> 并未依赖 LangGraph 库；LangGraph 作为进阶阶段的可选增强，非当前依赖。
 
 ## 架构
 

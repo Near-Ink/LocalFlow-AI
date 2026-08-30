@@ -127,6 +127,12 @@ footer .wrap{color:var(--muted);}
   <div class="wrap">
     <div class="kicker">LocalFlow AI · Tech Proposal</div>
     <h1>自有本地 Agent 设计清单</h1>
+    <div style="margin:14px 0;padding:12px 16px;border-left:4px solid #f59e0b;background:#fffbeb;color:#7c4a03;border-radius:8px;font-size:13px;line-height:1.7">
+      ⚠️ <b>文档状态</b>：本文为设计提案，部分内容已过时。截至 v0.1.0，文中列为「待建」的
+      <code>ports/tool.py</code>、<code>ports/agent.py</code>、<code>adapters/react_agent.py</code>、<code>adapters/sandbox.py</code>
+      及 7 个工具适配器均已实现并跑通（运行时注册 11 个工具、ReAct 循环、确认/拒绝流程、文本式工具调用降级）。
+      最新实现状态以 <code>backend/localflow/</code> 代码与测试为准。
+    </div>
     <p class="sub">在六边形架构内扩展现有 Scheduler 端口，内置一个能真正在本地动手做事的 agent，而不是把 DeepSeek Harness 整体嵌进来。</p>
     <div class="meta">
       <span>功能设计 / Feature Spec</span>

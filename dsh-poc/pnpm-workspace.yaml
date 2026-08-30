@@ -1,6 +1,8 @@
+# pnpm 10+ 原生构建白名单：dsh 运行依赖 koffi / node-pty 等原生模块，
+# 必须允许其 postinstall 编译，否则 pnpm install 后运行时缺 native binding。
 allowBuilds:
-  '@deepseek-ai/dsh-subprocess-local': set this to true or false
-  '@google/genai': set this to true or false
-  koffi: set this to true or false
-  node-pty: set this to true or false
-  protobufjs: set this to true or false
+  '@deepseek-ai/dsh-subprocess-local': true
+  '@google/genai': true
+  koffi: true
+  node-pty: true
+  protobufjs: true
