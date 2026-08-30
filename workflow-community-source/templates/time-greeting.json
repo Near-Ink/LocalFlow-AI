@@ -1,0 +1,37 @@
+{
+  "id": "time-greeting",
+  "kind": "localflow-workflow",
+  "version": 2,
+  "title": "时间问候",
+  "category": "办公自动化",
+  "description": "datetime 取当前时间 → LLM 改写成一句中文问候语",
+  "nodes": [
+    {
+      "id": "datetime-1",
+      "type": "tool",
+      "name": "datetime",
+      "params": {},
+      "x": 40,
+      "y": 40
+    },
+    {
+      "id": "llm-1",
+      "type": "llm",
+      "name": "",
+      "params": {
+        "prompt": "当前时间是 {{datetime-1.output}}，请用一句通顺、不啰嗦的中文问候语向我问好，只输出问候语本身。",
+        "temperature": 0.7
+      },
+      "x": 320,
+      "y": 40
+    }
+  ],
+  "edges": [
+    {
+      "from": "datetime-1",
+      "to": "llm-1"
+    }
+  ],
+  "name": "time-greeting",
+  "updated": "2026-08-29 00:00:00"
+}

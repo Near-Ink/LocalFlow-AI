@@ -1,0 +1,250 @@
+{
+  "brands": {
+    "DeepSeek": {
+      "base": "https://api.deepseek.com",
+      "models": [
+        { "id": "deepseek-v4-flash", "ctx": 1000000 },
+        { "id": "deepseek-v4-pro", "ctx": 1000000 },
+        { "id": "deepseek-chat", "ctx": 65536 },
+        { "id": "deepseek-reasoner", "ctx": 65536 }
+      ]
+    },
+    "OpenAI": {
+      "base": "https://api.openai.com/v1",
+      "models": [
+        { "id": "gpt-5", "ctx": 1000000 },
+        { "id": "gpt-5-mini", "ctx": 200000 },
+        { "id": "gpt-5-nano", "ctx": 200000 },
+        { "id": "gpt-5-pro", "ctx": 1000000 },
+        { "id": "gpt-5-codex", "ctx": 1000000 },
+        { "id": "o3", "ctx": 200000 },
+        { "id": "o3-mini", "ctx": 200000 },
+        { "id": "o4-mini", "ctx": 200000 },
+        { "id": "gpt-4.1", "ctx": 1000000 },
+        { "id": "gpt-4.1-mini", "ctx": 1000000 },
+        { "id": "gpt-4.1-nano", "ctx": 1000000 },
+        { "id": "gpt-4o", "ctx": 128000 },
+        { "id": "gpt-4o-mini", "ctx": 128000 }
+      ]
+    },
+    "通义千问": {
+      "base": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "models": [
+        { "id": "qwen3-max", "ctx": 262144 },
+        { "id": "qwen3.6-plus", "ctx": 1000000 },
+        { "id": "qwen3.5-flash", "ctx": 1000000 },
+        { "id": "qwen3-plus", "ctx": 262144 },
+        { "id": "qwen3-turbo", "ctx": 262144 },
+        { "id": "qwen-plus", "ctx": 131072 },
+        { "id": "qwen-turbo", "ctx": 1000000 },
+        { "id": "qwen-long", "ctx": 10000000 },
+        { "id": "qwen-flash", "ctx": 131072 },
+        { "id": "qwen2.5-72b-instruct", "ctx": 131072 }
+      ]
+    },
+    "智谱 GLM": {
+      "base": "https://open.bigmodel.cn/api/paas/v4",
+      "models": [
+        { "id": "glm-5.3", "ctx": 1000000 },
+        { "id": "glm-5.2", "ctx": 1000000 },
+        { "id": "glm-5.1", "ctx": 200000 },
+        { "id": "glm-5", "ctx": 200000 },
+        { "id": "glm-4.7", "ctx": 200000 },
+        { "id": "glm-4.6", "ctx": 200000 },
+        { "id": "glm-4.5", "ctx": 128000 },
+        { "id": "glm-4.5-air", "ctx": 128000 },
+        { "id": "glm-4-plus", "ctx": 128000 },
+        { "id": "glm-4v-plus", "ctx": 8000 }
+      ]
+    },
+    "Kimi 月之暗面": {
+      "base": "https://api.moonshot.cn/v1",
+      "models": [
+        { "id": "kimi-k3", "ctx": 1000000 },
+        { "id": "kimi-k2.6", "ctx": 256000 },
+        { "id": "kimi-k2.5", "ctx": 256000 },
+        { "id": "kimi-s2", "ctx": 262144 },
+        { "id": "kimi-latest", "ctx": 128000 },
+        { "id": "moonshot-v1-128k", "ctx": 131072 },
+        { "id": "moonshot-v1-32k", "ctx": 32768 },
+        { "id": "moonshot-v1-8k", "ctx": 8192 }
+      ]
+    },
+    "百度文心": {
+      "base": "https://qianfan.baidubce.com/v2",
+      "models": [
+        { "id": "ernie-4.5-turbo-128k", "ctx": 131072 },
+        { "id": "ernie-4.5-turbo-8k", "ctx": 8192 },
+        { "id": "ernie-4.5-128k", "ctx": 131072 },
+        { "id": "ernie-4.0-turbo-128k", "ctx": 131072 },
+        { "id": "ernie-4.0-turbo-8k", "ctx": 8192 },
+        { "id": "ernie-speed-128k", "ctx": 131072 },
+        { "id": "ernie-3.5-8k", "ctx": 8192 },
+        { "id": "ernie-lite-8k", "ctx": 8192 }
+      ]
+    },
+    "腾讯混元": {
+      "base": "https://api.hunyuan.cloud.tencent.com/v1",
+      "models": [
+        { "id": "hunyuan-pro", "ctx": 131072 },
+        { "id": "hunyuan-turbo-2502", "ctx": 131072 },
+        { "id": "hunyuan-turbos-latest", "ctx": 32768 },
+        { "id": "hunyuan-standard", "ctx": 131072 },
+        { "id": "hunyuan-lite", "ctx": 131072 },
+        { "id": "hunyuan-code", "ctx": 131072 }
+      ]
+    },
+    "MiniMax": {
+      "base": "https://api.minimaxi.com/v1",
+      "models": [
+        { "id": "MiniMax-M3", "ctx": 1000000 },
+        { "id": "MiniMax-M2.7", "ctx": 204800 },
+        { "id": "MiniMax-M2.5", "ctx": 204800 },
+        { "id": "MiniMax-M2.1", "ctx": 204800 },
+        { "id": "MiniMax-M2", "ctx": 204800 },
+        { "id": "MiniMax-Text-01", "ctx": 1000000 }
+      ]
+    },
+    "零一万物 Yi": {
+      "base": "https://api.lingyiwanwu.com/v1",
+      "models": [
+        { "id": "Yi-Lightning", "ctx": 16384 },
+        { "id": "Yi-Lightning-Lite", "ctx": 16384 },
+        { "id": "Yi-Large", "ctx": 32768 },
+        { "id": "Yi-Vision", "ctx": 16384 }
+      ]
+    },
+    "阶跃星辰": {
+      "base": "https://api.stepfun.com/v1",
+      "models": [
+        { "id": "step-3.7-flash", "ctx": 256000 },
+        { "id": "step-3.5-flash", "ctx": 256000 },
+        { "id": "step-2-mini", "ctx": 131072 },
+        { "id": "step-2-16k", "ctx": 16384 },
+        { "id": "step-1-32k", "ctx": 32768 },
+        { "id": "step-1-8k", "ctx": 8192 }
+      ]
+    },
+    "百川 Baichuan": {
+      "base": "https://api.baichuan-ai.com/v1",
+      "models": [
+        { "id": "Baichuan4-Turbo", "ctx": 32768 },
+        { "id": "Baichuan4-Air", "ctx": 32768 },
+        { "id": "Baichuan4", "ctx": 32768 },
+        { "id": "Baichuan3-Turbo-128K", "ctx": 128000 },
+        { "id": "Baichuan3-Turbo", "ctx": 32768 }
+      ]
+    },
+    "豆包 火山方舟": {
+      "base": "https://ark.cn-beijing.volces.com/api/v3",
+      "models": [
+        { "id": "doubao-seed-evolving", "ctx": 1024000 },
+        { "id": "doubao-seed-2-1-pro-260628", "ctx": 256000 },
+        { "id": "doubao-seed-2-1-turbo-260628", "ctx": 256000 },
+        { "id": "doubao-seed-1-6-thinking", "ctx": 256000 },
+        { "id": "doubao-seed-1-6", "ctx": 256000 },
+        { "id": "doubao-1-5-pro-256k", "ctx": 262144 },
+        { "id": "doubao-1-5-pro-32k", "ctx": 32768 },
+        { "id": "doubao-1-5-lite-32k", "ctx": 8192 }
+      ]
+    },
+    "硅基流动": {
+      "base": "https://api.siliconflow.cn/v1",
+      "models": [
+        { "id": "Qwen/Qwen3-235B-A22B-Instruct", "ctx": 131072 },
+        { "id": "Qwen/Qwen3-32B", "ctx": 131072 },
+        { "id": "Qwen/Qwen3-8B", "ctx": 131072 },
+        { "id": "Qwen/QwQ-32B", "ctx": 131072 },
+        { "id": "deepseek-ai/DeepSeek-V3", "ctx": 163840 },
+        { "id": "deepseek-ai/DeepSeek-R1", "ctx": 163840 },
+        { "id": "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B", "ctx": 131072 },
+        { "id": "THUDM/glm-4-9b-chat", "ctx": 131072 },
+        { "id": "Pro/Llama-3.3-70B-Instruct", "ctx": 131072 }
+      ]
+    },
+    "Groq": {
+      "base": "https://api.groq.com/openai/v1",
+      "models": [
+        { "id": "llama-3.3-70b-versatile", "ctx": 131072 },
+        { "id": "llama-3.1-8b-instant", "ctx": 131072 },
+        { "id": "openai/gpt-oss-120b", "ctx": 131072 },
+        { "id": "openai/gpt-oss-20b", "ctx": 131072 },
+        { "id": "qwen-2.5-32b", "ctx": 131072 },
+        { "id": "deepseek-r1-distill-llama-70b", "ctx": 131072 },
+        { "id": "gemma2-9b-it", "ctx": 8192 }
+      ]
+    },
+    "Google Gemini": {
+      "base": "https://generativelanguage.googleapis.com/v1beta/openai",
+      "models": [
+        { "id": "gemini-2.5-pro", "ctx": 1048576 },
+        { "id": "gemini-2.5-flash", "ctx": 1048576 },
+        { "id": "gemini-2.5-flash-lite-preview-06-17", "ctx": 1048576 },
+        { "id": "gemini-2.0-flash", "ctx": 1048576 }
+      ]
+    },
+    "Mistral": {
+      "base": "https://api.mistral.ai/v1",
+      "models": [
+        { "id": "mistral-medium-3-5", "ctx": 256000 },
+        { "id": "mistral-small-4", "ctx": 256000 },
+        { "id": "mistral-large-latest", "ctx": 128000 },
+        { "id": "mistral-small-latest", "ctx": 256000 },
+        { "id": "codestral-latest", "ctx": 256000 },
+        { "id": "pixtral-large-latest", "ctx": 131072 },
+        { "id": "ministral-8b-latest", "ctx": 128000 }
+      ]
+    },
+    "xAI Grok": {
+      "base": "https://api.x.ai/v1",
+      "models": [
+        { "id": "grok-4-1-fast-reasoning", "ctx": 2000000 },
+        { "id": "grok-4", "ctx": 256000 },
+        { "id": "grok-4-0909", "ctx": 256000 },
+        { "id": "grok-3-mini-fast", "ctx": 131072 },
+        { "id": "grok-2-latest", "ctx": 131072 }
+      ]
+    },
+    "Anthropic": {
+      "base": "https://api.anthropic.com/v1",
+      "models": [
+        { "id": "claude-opus-4-6", "ctx": 200000 },
+        { "id": "claude-sonnet-4-6", "ctx": 200000 },
+        { "id": "claude-sonnet-4-5", "ctx": 200000 },
+        { "id": "claude-opus-4-5", "ctx": 200000 },
+        { "id": "claude-3-7-sonnet", "ctx": 200000 },
+        { "id": "claude-3-5-haiku", "ctx": 200000 }
+      ]
+    },
+    "OpenRouter": {
+      "base": "https://openrouter.ai/api/v1",
+      "models": [
+        { "id": "openai/gpt-5", "ctx": 400000 },
+        { "id": "anthropic/claude-sonnet-4.5", "ctx": 1000000 },
+        { "id": "deepseek/deepseek-chat-v3.2", "ctx": 200000 },
+        { "id": "meta-llama/llama-4-maverick", "ctx": 128000 },
+        { "id": "mistralai/mistral-large", "ctx": 200000 },
+        { "id": "qwen/qwen3-235b-a22b-instruct", "ctx": 200000 }
+      ]
+    },
+    "NVIDIA NIM": {
+      "base": "https://integrate.api.nvidia.com/v1",
+      "models": [
+        { "id": "nvidia/llama-3.3-nemotron-super-49b-v1.5", "ctx": 131072 },
+        { "id": "meta/llama-3.3-70b-instruct", "ctx": 8192 },
+        { "id": "meta/llama-4-scout-instruct", "ctx": 128000 },
+        { "id": "mistralai/mistral-nemo-12b-instruct", "ctx": 131072 },
+        { "id": "nvidia/llama-3.1-nemotron-70b-instruct", "ctx": 128000 }
+      ]
+    },
+    "Perplexity": {
+      "base": "https://api.perplexity.ai",
+      "models": [
+        { "id": "sonar-pro", "ctx": 200000 },
+        { "id": "sonar", "ctx": 200000 },
+        { "id": "sonar-reasoning-pro", "ctx": 127000 },
+        { "id": "sonar-reasoning", "ctx": 127000 }
+      ]
+    }
+  }
+}

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LocalFlow AI · 应用图标预览</title>
+<style>
+  :root{--blue:#2563eb;--purple:#7c3aed;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:#f4f6fb;color:#1e293b;padding:32px 20px;}
+  .wrap{max-width:960px;margin:0 auto;}
+  h1{font-size:22px;margin-bottom:6px;}
+  .sub{color:#64748b;font-size:13px;margin-bottom:26px;line-height:1.7;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;margin-bottom:30px;}
+  .cell{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:22px;text-align:center;}
+  .cell .cap{font-size:12px;color:#64748b;margin-top:12px;}
+  .cell .cap b{color:#1e293b;}
+  .big{width:256px;height:256px;margin:0 auto;display:block;border-radius:22%;box-shadow:0 10px 30px rgba(37,99,235,.25);}
+  .mid{width:128px;height:128px;margin:0 auto;display:block;border-radius:22%;box-shadow:0 8px 22px rgba(37,99,235,.2);}
+  .small{width:64px;height:64px;margin:0 auto;display:block;border-radius:20%;box-shadow:0 6px 16px rgba(37,99,235,.18);}
+  .tiny{width:32px;height:32px;margin:0 auto;display:block;border-radius:20%;}
+  .card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:22px 26px;line-height:1.9;font-size:14px;}
+  .card h3{font-size:15px;margin-bottom:10px;}
+  .card ul{padding-left:20px;color:#334155;}
+  .card li{margin:6px 0;}
+  code{background:#eef2ff;border:1px solid #e0e7ff;border-radius:6px;padding:1px 7px;font-size:12.5px;color:#4f46e5;}
+  .warn{background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:14px 18px;font-size:13px;color:#92400e;margin-top:20px;line-height:1.8;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>LocalFlow AI · 应用图标预览</h1>
+  <div class="sub">当前为脚本生成的<b>品牌占位图标</b>：蓝紫渐变圆角方块 + 白色「L」字标。<br>发布前请用正式 logo（1024×1024 PNG）运行 <code>desktop/scripts/generate-icons.py --source logo.png</code> 一键替换。</div>
+
+  <div class="grid">
+    <div class="cell"><img class="big" src="icon.png" alt="512px"><div class="cap"><b>主图标</b> · 512×512</div></div>
+    <div class="cell"><img class="mid" src="icon.png" alt="128px"><div class="cap"><b>macOS / Windows 安装包</b> · 128</div></div>
+    <div class="cell"><img class="small" src="icon.png" alt="64px"><div class="cap"><b>任务栏 / Dock</b> · 64</div></div>
+    <div class="cell"><img class="tiny" src="icon.png" alt="32px"><div class="cap"><b>标题栏 / 收藏夹</b> · 32</div></div>
+  </div>
+
+  <div class="card">
+    <h3>🎨 设计说明</h3>
+    <ul>
+      <li><b>底色</b>：左上 → 右下 <code>#2563eb（蓝）</code> → <code>#7c3aed（紫）</code> 渐变，呼应「本地（蓝）+ 云端（紫）」的混合调度定位。</li>
+      <li><b>图形</b>：白色粗体字母「L」（LocalFlow 首字母），居中放置。</li>
+      <li><b>形状</b>：约 22% 圆角圆角方块，贴合 macOS / Windows 现代应用图标风格。</li>
+      <li><b>规格</b>：已生成 <code>icon.png</code>（512）、<code>icon.icns</code>（macOS 多尺寸）、<code>icon.ico</code>（Windows 16-256 共 7 档）。</li>
+    </ul>
+  </div>
+
+  <div class="warn">
+    ⚠️ 这是<b>占位图标</b>，不是最终品牌 logo。正式发布前请把设计好的 1024×1024 logo 放进来替换（脚本支持自动居中裁剪非正方形图），并建议同步更新 header 里的 <code>.logo</code>（网页端「L」徽标）保持视觉统一。
+  </div>
+</div>
+</body>
+</html>

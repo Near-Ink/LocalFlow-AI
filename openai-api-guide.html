@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LocalFlow AI — 对外 OpenAI 兼容 API 使用说明</title>
+<style>
+  :root{
+    --bg:#0f172a; --card:#1e293b; --card2:#243450; --rule:#334155;
+    --text:#e2e8f0; --muted:#94a3b8; --accent:#38bdf8; --accent2:#22d3ee;
+    --ok:#34d399; --warn:#fbbf24; --err:#f87171; --code:#0b1120;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,"PingFang SC",Segoe UI,Roboto,sans-serif;line-height:1.7}
+  .wrap{max-width:880px;margin:0 auto;padding:40px 24px 80px}
+  header.top{border-bottom:1px solid var(--rule);padding-bottom:22px;margin-bottom:28px}
+  .kicker{color:var(--accent);font-size:13px;letter-spacing:.5px;font-weight:600}
+  h1{font-size:30px;margin:8px 0 6px}
+  .sub{color:var(--muted);font-size:14px}
+  .badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+  .badge{font-size:12px;padding:4px 10px;border-radius:20px;border:1px solid var(--rule)}
+  .badge.acc{border-color:rgba(56,189,248,.5);color:var(--accent)}
+  h2{font-size:20px;margin-top:40px;padding-left:10px;border-left:3px solid var(--accent)}
+  h3{font-size:15px;margin-top:24px;color:var(--accent2)}
+  p{color:#cbd5e1}
+  code{background:var(--code);border:1px solid var(--rule);border-radius:4px;padding:1px 6px;font-family:"SF Mono",Menlo,Consolas,monospace;font-size:13px;color:#a5f3fc}
+  pre{background:var(--code);border:1px solid var(--rule);border-radius:10px;padding:14px 16px;overflow:auto;font-family:"SF Mono",Menlo,Consolas,monospace;font-size:13px;line-height:1.6}
+  pre code{background:none;border:none;padding:0;color:#d1fae5}
+  .card{background:var(--card);border:1px solid var(--rule);border-radius:12px;padding:18px 20px;margin:16px 0}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:640px){.grid{grid-template-columns:1fr}}
+  .step{display:flex;gap:12px;margin:14px 0}
+  .stepno{flex:none;width:26px;height:26px;border-radius:50%;background:rgba(56,189,248,.15);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin:14px 0}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--rule)}
+  th{color:var(--accent);font-weight:600}
+  td code{white-space:nowrap}
+  .tbl{overflow-x:auto}
+  ul{margin:6px 0;padding-left:20px;color:#cbd5e1}
+  li{margin:5px 0}
+  .ok{color:var(--ok)} .warn{color:var(--warn)} .err{color:var(--err)} .mut{color:var(--muted)}
+  .note{background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.3);border-radius:10px;padding:14px 16px;font-size:14px}
+  .warnbox{background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.35);border-radius:10px;padding:14px 16px;font-size:14px}
+  footer{margin-top:60px;border-top:1px solid var(--rule);padding-top:18px;color:var(--muted);font-size:12px}
+  .sep{height:1px;background:var(--rule);margin:34px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <div class="kicker">LocalFlow AI · 开发者功能文档</div>
+  <h1>对外 OpenAI 兼容 API 使用说明</h1>
+  <div class="sub">把 LocalFlow 的本地 / 云端模型暴露成标准 OpenAI 接口，供任何第三方 Agent、脚本与工具直接调用。</div>
+  <div class="badges">
+    <span class="badge acc">协议：OpenAI Chat Completions</span>
+    <span class="badge">默认地址：http://127.0.0.1:8765/v1</span>
+    <span class="badge">鉴权：Bearer API Key</span>
+    <span class="badge">支持流式</span>
+    <span class="badge">支持多模态</span>
+  </div>
+</header>
+
+<h2>1. 它能做什么</h2>
+<p>
+在本机启动 LocalFlow 后，它既是聊天应用，也是一个 <b>推理服务</b>。把它暴露的
+<code>/v1</code> 地址当成任何云厂商的 OpenAI 兼容入口即可——本机的 <code>llama3.1</code>、
+<code>qwen2.5vl</code> 等本地模型，以及你绑定的云端模型，都能被统一的
+<code>chat/completions</code> 协议调用，而无需关心底层用的是 Ollama 还是云端 API。
+</p>
+<p>适用于：Dify、n8n、FastGPT 等填写「自定义模型 / OpenAI 兼容」接入点；自研脚本；
+其它 Agent 框架接入本地便宜、私密的推理能力。</p>
+
+<div class="sep"></div>
+<h2>2. 快速开始（三步）</h2>
+
+<div class="step"><div class="stepno">1</div><div>
+  <h3>重启正式后端并配置密钥</h3>
+  <p>在系统终端重启用带 <code>LOCALFLOW_API_KEY</code> 的命令（把密钥换成你自己的）：</p>
+<pre><code>kill "$(lsof -t -iTCP:8765 -sTCP:LISTEN)" && cd "/Users/zhanghaoran/Documents/LocalFlow AI/backend" &amp;&amp; \
+LOCALFLOW_API_KEY=你的密钥 nohup ./start_localflow.sh &amp;</code></pre>
+  <p class="mut">本机 Ollama 需在运行。不设置该环境变量则本机免鉴权（仅本机建议设置，见「安全」）。</p>
+</div></div>
+
+<div class="step"><div class="stepno">2</div><div>
+  <h3>确认端点在线</h3>
+<pre><code>curl http://127.0.0.1:8765/api/health
+# {"status":"ok","version":"0.1.0","app":"LocalFlow AI"}</code></pre>
+</div></div>
+
+<div class="step"><div class="stepno">3</div><div>
+  <h3>在客户端填入三项配置</h3>
+  <div class="card">
+    <div><code>base_url</code> &nbsp;=&nbsp; <b>http://127.0.0.1:8765/v1</b></div>
+    <div><code>api_key</code> &nbsp;&nbsp;=&nbsp; <b>你的密钥</b></div>
+    <div><code>model</code> &nbsp;&nbsp;&nbsp;=&nbsp; <b>llama3.1:8b</b>（或用 GET /v1/models 查看全部）</div>
+  </div>
+</div></div>
+
+<div class="sep"></div>
+<h2>3. 端点</h2>
+<div class="tbl">
+<table>
+  <tr><th>方法 &amp; 路径</th><th>说明</th></tr>
+  <tr><td><code>GET /v1/models</code></td><td>列出可用模型（本机 Ollama + 云端绑定模型）</td></tr>
+  <tr><td><code>POST /v1/chat/completions</code></td><td>对话补全；<code>stream=true</code> 时返回 SSE 流</td></tr>
+</table>
+</div>
+
+<h2>4. 鉴权</h2>
+<p>当后端以 <code>LOCALFLOW_API_KEY</code> 启动时，所有请求须携带 Bearer Token：</p>
+<pre><code>Authorization: Bearer 你的密钥</code></pre>
+<ul>
+  <li>缺省 / 错误密钥 → <code class="err">401 Unauthorized</code></li>
+  <li>未配置密钥启动 → 本机免鉴权（方便起见，但建议始终设置）</li>
+</ul>
+
+<h2>5. 请求示例</h2>
+
+<div class="grid">
+  <div>
+    <h3>cURL · 非流式</h3>
+<pre><code>curl http://127.0.0.1:8765/v1/chat/completions \
+  -H "Authorization: Bearer 你的密钥" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "llama3.1:8b",
+    "messages": [
+      {"role": "user", "content": "用一句话介绍你自己"}
+    ],
+    "temperature": 0.7
+  }'</code></pre>
+  </div>
+  <div>
+    <h3>cURL · 流式</h3>
+<pre><code>curl http://127.0.0.1:8765/v1/chat/completions \
+  -H "Authorization: Bearer 你的密钥" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "llama3.1:8b",
+    "messages": [
+      {"role": "user", "content": "打个招呼"}
+    ],
+    "stream": true
+  }'</code></pre>
+  </div>
+</div>
+
+<h3>Python · openai SDK</h3>
+<pre><code>from openai import OpenAI
+
+client = OpenAI(
+    api_key="你的密钥",
+    base_url="http://127.0.0.1:8765/v1",
+)
+
+resp = client.chat.completions.create(
+    model="llama3.1:8b",
+    messages=[{"role": "user", "content": "为什么天空是蓝的？"}],
+)
+print(resp.choices[0].message.content)</code></pre>
+
+<div class="card">
+  <h3 style="margin-top:0">其他 Agent / 低代码平台接入</h3>
+  <ul>
+    <li><b>Dify</b>：设置 → 模型供应商 → 「自定义/OpenAI API」→ 填以上 <code>base_url</code>、<code>api_key</code>、<code>model</code>。</li>
+    <li><b>n8n</b>：添加「OpenAI」节点 → 使用自定义 base URL 指向本地址。</li>
+    <li><b>任何 OpenAI SDK</b>：仅需 <code>base_url</code> 覆盖，其余用法完全相同。</li>
+  </ul>
+</div>
+
+<h2>6. 消息与多模态</h2>
+<p><code>messages</code> 兼容 OpenAI 结构，支持 <code>system / user / assistant</code> 角色。
+对于视觉模型，<code>content</code> 可传 parts 数组并附带 base64 图片：</p>
+<pre><code>{
+  "model": "qwen2.5vl:7b",
+  "messages": [{
+    "role": "user",
+    "content": [
+      {"type": "text", "text": "这张图里是什么颜色？"},
+      {"type": "image_url", "image_url": {
+        "url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
+      }}
+    ]
+  }]
+}</code></pre>
+<p class="mut">图片请以 <code>data:</code> URL（base64）形式传入；纯文本字符串直接传入即可。</p>
+
+<h2>7. 模型路由规则</h2>
+<div class="tbl">
+<table>
+  <tr><th>请求的 model</th><th>路由到</th></tr>
+  <tr><td>云端绑定的模型名</td><td>云端引擎（OpenAI 兼容服务）</td></tr>
+  <tr><td>本机 Ollama 已安装的模型名</td><td>本地引擎（Ollama）</td></tr>
+  <tr><td>省略 / 空</td><td>配置的默认模型 <code>default_model</code></td></tr>
+  <tr><td>其它未知名称</td><td><span class="err">404</span>，并提示查看 <code>/v1/models</code></td></tr>
+</table>
+</div>
+
+<h2>8. 响应结构（非流式）</h2>
+<pre><code>{
+  "id": "chatcmpl-...", "object": "chat.completion", "created": 1787989895,
+  "model": "llama3.1:8b",
+  "choices": [{
+    "index": 0,
+    "message": {"role": "assistant", "content": "你好"},
+    "finish_reason": "stop"
+  }],
+  "usage": {"prompt_tokens": 17, "completion_tokens": 3, "total_tokens": 20}
+}</code></pre>
+<p>流式响应为 SSE：每行 <code>data: {json}</code>，字段为 <code>choices[].delta.content</code>
+逐字增量，结束时输出 <code>finish_reason</code> 与 <code>usage</code>，并以
+<code>data: [DONE]</code> 收尾。</p>
+
+<div class="grid">
+  <div class="note">
+    <b class="ok">✓ 常见正常情况</b>
+    <ul>
+      <li>返回 <code>200</code>，含 choices 与 usage</li>
+      <li>流式逐块返回，最后 <code>[DONE]</code></li>
+    </ul>
+  </div>
+  <div class="warnbox">
+    <b class="warn">常见错误</b>
+    <ul>
+      <li><code>401</code> 缺密钥或密钥错误</li>
+      <li><code>400</code> messages 为空 / 模型调用失败</li>
+      <li><code>404</code> 模型不存在，看 /v1/models</li>
+    </ul>
+  </div>
+</div>
+
+<div class="sep"></div>
+<h2>9. 安全提醒</h2>
+<div class="warnbox">
+  <ul style="margin:0">
+    <li>默认后端只监听 <b>127.0.0.1</b>，仅本机进程可访问——别改为 <code>0.0.0.0</code>
+        或做公网映射，除非你确认网络环境安全。</li>
+    <li>强烈建议始终设置 <code>LOCALFLOW_API_KEY</code>，防止本机其它网页脚本偷偷调用你的模型。</li>
+    <li>密钥对待，别写进共享代码或提交到仓库。</li>
+  </ul>
+</div>
+
+<footer>
+  文档生成：LocalFlow AI · 对应当前后端功能 /v1 端点。配置项以实际环境为准。
+</footer>
+</div>
+</body>
+</html>

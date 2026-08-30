@@ -1,0 +1,4 @@
+# file-workspace-preview 的 bundle：把自己声明为可加载插件
+- insert:
+    - id: file-workspace-preview
+      name: '@local/file-workspace-preview'

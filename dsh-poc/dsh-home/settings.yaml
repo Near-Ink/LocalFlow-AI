@@ -1,0 +1,30 @@
+agent-default-model:
+  provider: local-flow
+  model: qwen2.5vl:7b
+ui-onboarding:
+  welcomeNoticeVersion: 2026-08-13.1
+llm-pi-ai:
+  providers:
+    local-flow:
+      models:
+        - id: qwen2.5vl:7b
+          name: LocalFlow Qwen2.5 VL 7B
+          contextWindow: 32768
+          maxTokens: 4096
+          input: []
+          compat:
+            chatTemplateKwargs: {}
+        - id: mistral-nemo:12b
+          name: LocalFlow Mistral-Nemo 12B
+          contextWindow: 32768
+          maxTokens: 4096
+          input: []
+          compat:
+            chatTemplateKwargs: {}
+        - id: llama3.1:8b
+          name: LocalFlow llama3.1 8B
+          contextWindow: 8192
+          maxTokens: 4096
+          input: []
+          compat:
+            chatTemplateKwargs: {}

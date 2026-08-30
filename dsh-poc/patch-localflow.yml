@@ -1,0 +1,33 @@
+# POC: dsh 通过我们设计的「本地部署模型」——LocalFlow 的 OpenAI 兼容接口跑 Agent。
+# LocalFlow /v1 负责模型路由、身份注入、设置等自有能力；
+# 本 provider 只是把 dsh 的 OpenAI 调用指向 LocalFlow 的端点。
+# 用法: DSH_HOME=./dsh-home dsh --profile headless --patch ./patch-localflow.yml "<任务>"
+- id: llm-pi-ai
+  name: '@deepseek-ai/dsh-llm-pi-ai'
+  config:
+    providers:
+      local-flow:
+        displayName: LocalFlow (本机)
+        apiKeyEnv: LOCALFLOW_API_KEY
+        api: openai-completions
+        baseURL: http://127.0.0.1:8765/v1
+        compat:
+          supportsDeveloperRole: true
+        models:
+          - id: llama3.1:8b
+            name: LocalFlow llama3.1 8B
+            contextWindow: 8192
+            maxTokens: 4096
+          - id: mistral-nemo:12b
+            name: LocalFlow Mistral-Nemo 12B
+            contextWindow: 32768
+            maxTokens: 4096
+          - id: qwen2.5vl:7b
+            name: LocalFlow Qwen2.5 VL 7B
+            contextWindow: 32768
+            maxTokens: 4096
+- id: agent-default-model
+  name: '@deepseek-ai/dsh-agent-default-model'
+  config:
+    provider: local-flow
+    model: llama3.1:8b

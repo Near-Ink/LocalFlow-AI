@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# 保留 desktop/build/ 下的发布图标（electron-builder buildResources），其余 build/ 忽略
+!desktop/build/
+!desktop/build/**
+
+# 虚拟环境
+.venv/
+venv/
+env/
+
+# LocalFlow 数据目录
+.localflow/
+*.db
+events.db
+cache.db
+
+# Node
+node_modules/
+dist/
+out/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# 环境变量
+.env
+.env.local
+
+# dsh 运行状态（会话/缓存不提交，配置文件保留）
+dsh-poc/dsh-home/sessions/
+dsh-poc/dsh-home/storages/
+
+# 浏览器验证截图（临时产物）
+dsh-poc/ui-screenshots/
+
+# 工具私有产物
+.trae-html-share-packages/

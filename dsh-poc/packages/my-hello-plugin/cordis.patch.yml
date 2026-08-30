@@ -1,0 +1,4 @@
+# my-hello-plugin 的 bundle：通过 insert 把自己声明为一个可加载插件
+- insert:
+    - id: my-hello-plugin
+      name: '@local/my-hello-plugin'

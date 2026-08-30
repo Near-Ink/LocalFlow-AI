@@ -1,0 +1,5 @@
+# POC: 挂载"文件工作区预览"插件
+# 用法: dsh --profile headless --patch ./patch-file-ws.yml "<任务>"
+- insert:
+    - id: file-workspace-preview
+      name: '@local/file-workspace-preview'

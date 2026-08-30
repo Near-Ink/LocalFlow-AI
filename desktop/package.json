@@ -1,0 +1,20 @@
+{
+  "name": "localflow-ai-desktop",
+  "version": "0.1.0",
+  "description": "LocalFlow AI — 本地 AI 桌面平台（Electron 客户端）",
+  "main": "src/main/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder --config electron-builder.yml",
+    "build:mac": "electron-builder --config electron-builder.yml --mac",
+    "build:win": "electron-builder --config electron-builder.yml --win",
+    "build:linux": "electron-builder --config electron-builder.yml --linux"
+  },
+  "author": "LocalFlow AI Team",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "electron": "^30.0.0",
+    "electron-builder": "^24.13.0"
+  }
+}

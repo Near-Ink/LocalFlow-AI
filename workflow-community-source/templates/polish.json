@@ -1,0 +1,24 @@
+{
+  "id": "polish",
+  "kind": "localflow-workflow",
+  "version": 2,
+  "title": "文案润色",
+  "category": "文本处理",
+  "description": "LLM 单节点：把输入文本润色得更通顺、更正式（无上游，需在节点提示词里粘贴文本）",
+  "nodes": [
+    {
+      "id": "llm-1",
+      "type": "llm",
+      "name": "",
+      "params": {
+        "prompt": "请润色下面这段文本，使其更通顺、更书面、不改变原意，直接输出润色结果：\n【待润色文本，在此粘贴】",
+        "temperature": 0.7
+      },
+      "x": 120,
+      "y": 60
+    }
+  ],
+  "edges": [],
+  "name": "polish",
+  "updated": "2026-08-29 00:00:00"
+}

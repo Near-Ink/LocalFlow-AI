@@ -1,0 +1,13 @@
+# localws-mini：极小工具集，仅用于验证本地模型能否正确调用
+# LocalFlow 的 file-workspace-preview 插件（files_list / file_preview）。
+# 目录极简，降低弱模型 function-calling 的难度。
+- id: persona
+  name: '@deepseek-ai/dsh-persona'
+  config:
+    text: >-
+      You are a coding agent powered by the {{model}} model. Your working
+      directory is {{cwd}}. Use the provided tools to browse and inspect files.
+    includeRuntimeContext: true
+
+- id: file-workspace-preview
+  name: '@local/file-workspace-preview'

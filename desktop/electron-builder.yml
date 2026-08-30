@@ -1,0 +1,76 @@
+# LocalFlow AI — electron-builder 打包配置
+# 用法: cd desktop && npx electron-builder --config electron-builder.yml [--mac|--win|--linux]
+#
+# 打包前提：先构建 Python 后端（PyInstaller），产物位于 ../backend/dist/localflow-backend/
+#   cd backend && pip install -r requirements.txt pyinstaller && pyinstaller localflow-backend.spec
+# 该后端目录会作为 extraResources 随应用分发，Electron 启动时自动拉起（见 src/main/main.js）。
+
+appId: ai.localflow.app
+productName: LocalFlow AI
+copyright: Copyright © 2025 LocalFlow AI Team
+electronVersion: 30.0.0
+
+directories:
+  output: dist
+  buildResources: build
+
+files:
+  - src/**
+  - package.json
+
+# 携带打包好的 Python 后端（PyInstaller 产物：单目录可执行）
+extraResources:
+  - from: ../backend/dist/localflow-backend
+    to: backend
+    filter:
+      - "**/*"
+
+# ── Windows ──────────────────────────────────────────────────────────────────
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  artifactName: "${productName}-Setup-${version}-${arch}.${ext}"
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  perMachine: false
+  createDesktopShortcut: true
+  shortcutName: LocalFlow AI
+
+# ── macOS ────────────────────────────────────────────────────────────────────
+mac:
+  target:
+    - target: dmg
+      arch:
+        - arm64
+        - x64
+  category: public.app-category.productivity
+  darkModeSupport: true
+  artifactName: "${productName}-${version}-${arch}.${ext}"
+  # 未配置 icns 时用默认 Electron 图标；正式发布前请放入 build/icon.icns
+
+dmg:
+  title: "${productName} ${version}"
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications
+
+# ── Linux ────────────────────────────────────────────────────────────────────
+linux:
+  target:
+    - target: AppImage
+      arch:
+        - x64
+  category: Utility
+  maintainer: LocalFlow AI Team <dev@localflow.ai>
+  artifactName: "${productName}-${version}-${arch}.${ext}"
+
+# 发布说明：GitHub Actions（.github/workflows/build.yml）负责构建产物与
+# Release 创建（electron-builder 使用 --publish never，不在此处发布）。

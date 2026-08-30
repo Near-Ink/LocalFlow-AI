@@ -1,0 +1,55 @@
+{
+  "id": "community",
+  "name": "LocalFlow 社区模板库",
+  "categories": [
+    "办公自动化",
+    "文本处理"
+  ],
+  "templates": [
+    {
+      "id": "time-greeting",
+      "title": "时间问候",
+      "category": "办公自动化",
+      "description": "datetime 取当前时间 → LLM 改写成一句中文问候语",
+      "node_count": 2,
+      "edge_count": 1,
+      "url": "https://youruser.github.io/localflow-community/templates/time-greeting.json"
+    },
+    {
+      "id": "daily-brief",
+      "title": "今日简报",
+      "category": "办公自动化",
+      "description": "datetime 取当前时间 → LLM 生成今日工作简报开头要点",
+      "node_count": 2,
+      "edge_count": 1,
+      "url": "https://youruser.github.io/localflow-community/templates/daily-brief.json"
+    },
+    {
+      "id": "email-opener",
+      "title": "邮件开场",
+      "category": "办公自动化",
+      "description": "datetime 取当前时间 → LLM 生成一封正式邮件的开场白",
+      "node_count": 2,
+      "edge_count": 1,
+      "url": "https://youruser.github.io/localflow-community/templates/email-opener.json"
+    },
+    {
+      "id": "polish",
+      "title": "文案润色",
+      "category": "文本处理",
+      "description": "LLM 单节点：把输入文本润色得更通顺、更正式（无上游，需在节点提示词里粘贴文本）",
+      "node_count": 1,
+      "edge_count": 0,
+      "url": "https://youruser.github.io/localflow-community/templates/polish.json"
+    },
+    {
+      "id": "summarize",
+      "title": "要点摘要",
+      "category": "文本处理",
+      "description": "LLM 单节点：把一段长文本提炼成 3 条要点（无上游，需在节点提示词里粘贴文本）",
+      "node_count": 1,
+      "edge_count": 0,
+      "url": "https://youruser.github.io/localflow-community/templates/summarize.json"
+    }
+  ]
+}

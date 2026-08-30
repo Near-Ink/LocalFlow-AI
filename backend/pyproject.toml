@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "localflow-ai"
+version = "0.1.0"
+description = "LocalFlow AI — 本地 AI 桌面平台，复刻 DSH 架构的本地云端混合 AI 调度平台"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [{ name = "LocalFlow AI Team" }]
+dependencies = [
+    "fastapi>=0.110.0",
+    "uvicorn[standard]>=0.27.0",
+    "httpx>=0.27.0",
+    "pydantic>=2.6.0",
+    "psutil>=5.9.0",
+]
+
+[project.scripts]
+localflow = "localflow.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["localflow*"]

@@ -1,0 +1,37 @@
+{
+  "id": "daily-brief",
+  "kind": "localflow-workflow",
+  "version": 2,
+  "title": "今日简报",
+  "category": "办公自动化",
+  "description": "datetime 取当前时间 → LLM 生成今日工作简报开头要点",
+  "nodes": [
+    {
+      "id": "datetime-1",
+      "type": "tool",
+      "name": "datetime",
+      "params": {},
+      "x": 40,
+      "y": 40
+    },
+    {
+      "id": "llm-1",
+      "type": "llm",
+      "name": "",
+      "params": {
+        "prompt": "今天是 {{datetime-1.output}}。请写一段 3-4 行的今日工作简报开头，包含日期与一句工作提醒，中文输出。",
+        "temperature": 0.7
+      },
+      "x": 320,
+      "y": 40
+    }
+  ],
+  "edges": [
+    {
+      "from": "datetime-1",
+      "to": "llm-1"
+    }
+  ],
+  "name": "daily-brief",
+  "updated": "2026-08-29 00:00:00"
+}

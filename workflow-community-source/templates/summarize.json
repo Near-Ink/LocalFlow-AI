@@ -1,0 +1,24 @@
+{
+  "id": "summarize",
+  "kind": "localflow-workflow",
+  "version": 2,
+  "title": "要点摘要",
+  "category": "文本处理",
+  "description": "LLM 单节点：把一段长文本提炼成 3 条要点（无上游，需在节点提示词里粘贴文本）",
+  "nodes": [
+    {
+      "id": "llm-1",
+      "type": "llm",
+      "name": "",
+      "params": {
+        "prompt": "请把下面这段文字提炼成 3 条精炼要点，用中文、分条列出，只输出要点：\n【待摘要文本，在此粘贴】",
+        "temperature": 0.7
+      },
+      "x": 120,
+      "y": 60
+    }
+  ],
+  "edges": [],
+  "name": "summarize",
+  "updated": "2026-08-29 00:00:00"
+}

@@ -1,0 +1,5 @@
+# POC: 用 insert 语法把本地自研插件挂载进 profile
+# 用法: dsh --profile headless --patch ./patch-my-plugin.yml "<任务文本>"
+- insert:
+    - id: my-hello-plugin
+      name: '@local/my-hello-plugin'

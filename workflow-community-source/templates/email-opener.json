@@ -1,0 +1,37 @@
+{
+  "id": "email-opener",
+  "kind": "localflow-workflow",
+  "version": 2,
+  "title": "邮件开场",
+  "category": "办公自动化",
+  "description": "datetime 取当前时间 → LLM 生成一封正式邮件的开场白",
+  "nodes": [
+    {
+      "id": "datetime-1",
+      "type": "tool",
+      "name": "datetime",
+      "params": {},
+      "x": 40,
+      "y": 40
+    },
+    {
+      "id": "llm-1",
+      "type": "llm",
+      "name": "",
+      "params": {
+        "prompt": "当前日期是 {{datetime-1.output}}。请用中文写一句正式商务邮件的开场白，包含日期背景，语气礼貌简洁。",
+        "temperature": 0.7
+      },
+      "x": 320,
+      "y": 40
+    }
+  ],
+  "edges": [
+    {
+      "from": "datetime-1",
+      "to": "llm-1"
+    }
+  ],
+  "name": "email-opener",
+  "updated": "2026-08-29 00:00:00"
+}
