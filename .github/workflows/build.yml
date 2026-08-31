@@ -84,13 +84,14 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # macOS 签名/公证凭据：仅在仓库 Secrets 中配置后生效；缺省留空则跳过签名
-          # （仍可出包，但他人 Mac 首次打开会被 Gatekeeper 拦截）。
-          CSC_LINK: ${{ secrets.CSC_LINK }}
-          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          # 测试阶段不签名/不公证：不传递任何代码签名凭据（CSC_LINK/WIN_CSC_LINK/APPLE_*）。
+          # 等购买 Apple Developer 账号并准备好 Windows 代码签名证书后，再在此映射
+          # CSC_LINK / CSC_KEY_PASSWORD（Windows Authenticode）与
+          # APPLE_ID / APPLE_APP_SPECIFIC_PASSWORD / APPLE_TEAM_ID（macOS 公证），
+          # 并把 electron-builder.yml 的 mac.identity / notarize 改为启用值。
+          # ⚠️ 若仓库 Secrets 或 Environment 里残留了指向目录（非证书文件）的
+          # CSC_LINK / WIN_CSC_LINK，请一并删除，否则 Windows 构建会报
+          # "Env WIN_CSC_LINK is not correct, cannot resolve: ... not a file"。
         run: |
           case "${{ matrix.os }}" in
             macos-*)
