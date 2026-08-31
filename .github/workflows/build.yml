@@ -1,10 +1,13 @@
 name: Build & Release
 
 # 触发方式：
-#   1. 推送 tag（如 v0.1.0）→ 自动构建三路产物（macOS arm64 / Windows / Linux）并发布到 GitHub Releases
+#   1. 推送 tag（如 v0.1.0）→ 自动构建并发布到 GitHub Releases（产物见下）
 #   2. 手动触发（Actions 页 → Run workflow）→ 仅构建并上传 artifacts，不发布
-# 说明：暂去掉 macos-13（Intel x64）一路 —— 公开仓库 Intel runner 排队极久（实测 3.5h+ 未 pickup），
-#       且当前目标机器均为 Apple Silicon / Windows，Intel dmg 暂不需要。需要时可恢复下方矩阵项。
+# 矩阵说明：当前仅 macos-arm64 / windows / linux 三路。
+#   - macos-13（Intel x64）runner 在公开仓库排队极久（实测 3.5h+ 未 pickup），已移除；
+#   - 但 macOS 的 Intel dmg 仍由 electron-builder 在 arm64 runner 上交叉编译产出
+#     （见 electron-builder.yml 的 mac.target.arch: [arm64, x64]），Intel Mac 用户不受影响。
+#   若日后确实需要独立 Intel runner（如签名/公证差异），可恢复下方 macos-13 矩阵项。
 on:
   push:
     tags:
