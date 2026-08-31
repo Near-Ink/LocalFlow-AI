@@ -4,6 +4,19 @@
 
 **一键部署 · 硬件自适应 · 本地云端混合调度 · 对话页内置 DeepSeek Harness · 对外 OpenAI 兼容 API**
 
+### ⚠️ macOS 用户必读：首次打开被拦截的解决办法
+
+> [!CAUTION]
+> 当前安装包**尚未做 Apple 开发者签名 / 公证**（测试阶段暂不购买 $99/年 账号）。在 Mac 上**首次双击打开会被 Gatekeeper 拦截**，提示「无法验证开发者」或「已损坏」。**这是预期内的正常现象，不是安装包损坏**，任选其一即可绕过：
+> 1. **右键** 点击 `LocalFlow AI.app` → 选择「**打开**」→ 弹窗中点「打开」确认（每个新版本首次打开需重复一次）；
+> 2. 终端执行下方命令解除隔离标记后重试：
+>
+> ```bash
+> sudo xattr -rd com.apple.quarantine "/Applications/LocalFlow AI.app"
+> ```
+>
+> 绕过一次后即可正常双击打开。正式签名 + 公证将在后续版本补齐。
+
 LocalFlow AI 把「本地推理（Ollama）+ 云端大模型」统一进一个桌面应用：对话页内置 DeepSeek Harness 作为 Agent 工作台，本地模型通过硬件识别库自动推荐部署，并提供 OpenAI 兼容接口让其他 Agent / 工具直接调用本机模型。
 
 ## ✨ 核心特性
@@ -96,10 +109,11 @@ npm run dev
 
 > 💡 下一版起文件名会直接带平台标识（如 `LocalFlow.AI-0.1.0-macOS-arm64.dmg`），更易辨认；当前请按上表对应下载。
 
-> ⚠️ **macOS 打不开？** 安装包暂未做 Apple 开发者签名 / 公证，首次打开会被 Gatekeeper 拦截（提示「无法验证开发者」或「已损坏」）。任选其一解决：
-> 1. 右键点击 App → 「打开」→ 再次确认即可；
-> 2. 终端执行 `sudo xattr -rd com.apple.quarantine "/Applications/LocalFlow AI.app"` 后重试。
-> 正式签名 + 公证需 Apple Developer 账号凭据，将在后续版本补齐。
+> [!WARNING]
+> **macOS 打不开？** 安装包**暂未做 Apple 开发者签名 / 公证**（测试阶段暂不购买账号），首次打开会被 Gatekeeper 拦截（提示「无法验证开发者」或「已损坏」）—— **这不是包损坏，按下面任选其一即可正常使用**：
+> 1. **右键** `LocalFlow AI.app` → 「**打开**」→ 再次确认；
+> 2. 终端执行：`sudo xattr -rd com.apple.quarantine "/Applications/LocalFlow AI.app"` 后重试。
+> 正式签名 + 公证将在后续版本补齐。
 
 ## 🔌 对外 API（让其他 Agent 使用本机模型）
 
