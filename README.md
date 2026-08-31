@@ -25,7 +25,7 @@ LocalFlow AI 把「本地推理（Ollama）+ 云端大模型」统一进一个�
 
 ## ✨ 核心特性
 
-- **对话页内置 DeepSeek Harness** — 完整的 Agent 工作台（会话、子任务、工具、工作流），聊天统一由 dsh 承担
+- **对话页内置 DeepSeek Harness（已内置，零安装）** — 完整的 Agent 工作台（会话、子任务、工具、工作流），聊天统一由 dsh 承担；**dsh 与其便携 Node 运行时已一并打进安装包**，下载即用，无需另行安装 dsh 或 Node
 - **本地部署向导 + 硬件识别库** — 部署时探测本机硬件并与已知硬件库匹配（Apple Silicon / NVIDIA / AMD / Intel Arc），命中即给出准确能力档位与模型推荐；未命中按显存/内存通用规则兜底，绝不因识别失败而中断
 - **对外 OpenAI 兼容 API** — 一键生成 API Key，其他 Agent / 工具（Cursor、Cline、Open WebUI 等）直接以 OpenAI 协议调用本机模型（本地 + 云端绑定），支持 SSE 流式
 - **本地云端混合调度** — 本地模型负责日常高频任务，云端 API 兜底复杂推理；下载本地模型期间可先绑定云端开聊
@@ -102,7 +102,7 @@ npm run dev
 
 ### 方式二：下载安装包（推荐小白）
 
-从 [GitHub Releases](https://github.com/Near-Ink/LocalFlow-AI/releases) 下载对应平台安装包，双击安装即可，**Python 后端已内嵌并自动拉起**，无需配环境。
+从 [GitHub Releases](https://github.com/Near-Ink/LocalFlow-AI/releases) 下载对应平台安装包，双击安装即可。**Python 后端、DeepSeek Harness（dsh）与便携 Node 运行时均已内嵌**，启动时自动拉起，无需配环境、无需另行安装 dsh / Node（真正的零安装）。
 
 | 平台 | 文件（v0.1.1） | 适用 |
 |------|---------------|------|
@@ -158,6 +158,7 @@ cd desktop && npm install && npm run build:mac   # 或 build:win / build:linux
 
 - **核心引擎**：Apache-2.0（开源）
 - **企业级增值模块**：商业授权（闭源）
+- **第三方组件**：DeepSeek Harness（[@deepseek-ai/dsh](https://www.npmjs.com/package/@deepseek-ai/dsh)）以 **MIT** 协议随安装包一并分发，实现「下载即用、零安装」；其许可证文件随产物位于安装包 `resources/dsh/LICENSE`，打包流程见 `desktop/scripts/bundle-dsh.mjs`
 
 ## 🛣️ 路线图
 

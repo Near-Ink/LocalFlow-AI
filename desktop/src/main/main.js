@@ -15,8 +15,9 @@ const BACKEND_PORT = 8765;
 const BACKEND_HEALTH_URL = `http://127.0.0.1:${BACKEND_PORT}/api/health`;
 
 // DeepSeek Harness（dsh）：对话与 Agent 能力由它提供，默认 8080。
-// 安装包不内嵌 dsh，但主进程会在其未运行时尝试自动拉起（开发模式用仓库内
-// dsh-poc 依赖；打包后用 PATH 中的 dsh）。拉起失败不报错，引导卡兜底提示手动启动。
+// 安装包**已内嵌 dsh 与便携 Node**（scripts/bundle-dsh.mjs 产物 → resources/dsh、resources/node），
+// 实现「下载即用、离线零安装」：打包态直接用内置 Node 拉起内置 dsh，DSH_HOME 指向 userData 下的
+// 可写副本；开发态用仓库内 dsh-poc 依赖；两者都没有才退回 PATH 中的 dsh，失败由引导卡兜底提示。
 const DSH_PORT = 8080;
 const DSH_BASE = process.env.LOCALFLOW_DSH_HOST
   ? `http://${process.env.LOCALFLOW_DSH_HOST}`
@@ -24,17 +25,90 @@ const DSH_BASE = process.env.LOCALFLOW_DSH_HOST
 const DSH_HEALTH_URL = `${DSH_BASE}/`;
 
 /**
- * 定位 dsh 可执行文件：
- *  1) 开发模式：优先用仓库内 dsh-poc 的本地依赖（无需全局安装）
- *  2) 打包模式：交给 PATH 中的 `dsh` 解析（用户自行全局安装）
- *  3) 都不存在时返回 'dsh'，由 spawn 解析 PATH；若仍失败则引导卡兜底
+ * 打包后内置 dsh 入口脚本（scripts/bundle-dsh.mjs 产物 → resources/dsh）。
+ *
+ * ⚠️ 必须是 .pnpm/<hash>/node_modules/ 下的那份，绝不能用顶层 node_modules/@deepseek-ai/dsh：
+ *    pnpm 布局中每个包的依赖是 .pnpm/<hash>/node_modules/ 里的**同级项**，
+ *    dsh-app-boot 等传递依赖并不存在于顶层 node_modules，从顶层启动会 MODULE_NOT_FOUND。
+ *    hash 随依赖图变化，故运行时按前缀动态查找，避免写死。
  */
-function findDshBinary() {
+function bundledDshEntry() {
+  if (!app.isPackaged) return null;
+  const pnpmDir = path.join(process.resourcesPath, 'dsh', 'node_modules', '.pnpm');
+  if (!fs.existsSync(pnpmDir)) return null;
+  try {
+    const hit = fs.readdirSync(pnpmDir).find((n) => n.startsWith('@deepseek-ai+dsh@'));
+    if (!hit) return null;
+    const p = path.join(pnpmDir, hit, 'node_modules', '@deepseek-ai', 'dsh', 'lib', 'bin.js');
+    return fs.existsSync(p) ? p : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+/** 打包后内置便携 Node（resources/node/node，Windows 为 node.exe） */
+function bundledNodePath() {
+  if (!app.isPackaged) return null;
+  const exe = process.platform === 'win32' ? 'node.exe' : 'node';
+  const p = path.join(process.resourcesPath, 'node', exe);
+  return fs.existsSync(p) ? p : null;
+}
+
+/** 递归复制目录，跳过会话/存储/截图等隐私与运行态数据 */
+function copyDirSync(src, dest) {
+  fs.mkdirSync(dest, { recursive: true });
+  for (const e of fs.readdirSync(src, { withFileTypes: true })) {
+    if (e.name === 'sessions' || e.name === 'storages' || e.name === 'ui-screenshots') continue;
+    const s = path.join(src, e.name);
+    const d = path.join(dest, e.name);
+    if (e.isDirectory()) copyDirSync(s, d);
+    else if (e.isFile()) fs.copyFileSync(s, d);
+  }
+}
+
+/**
+ * dsh 的 home：$DSH_HOME/profiles 决定 --profile web 加载哪个 profile。
+ * 必须可写（dsh 会写 sessions/storages/settings），故放在 userData 下而非只读的 app 包内；
+ * 首次运行从内置模板（或开发态 dsh-poc/dsh-home）播种一份，保证开箱即用。
+ * 注：模板中的 settings.yaml 是有意保留的——它配置 LocalFlow 本地 provider（local-flow）
+ * 让 dsh 直接对接本机 Ollama 模型，且不含任何密钥。
+ */
+function ensureDshHome() {
+  const home = path.join(app.getPath('userData'), 'dsh-home');
+  try {
+    if (!fs.existsSync(path.join(home, 'profiles', 'web'))) {
+      const tpl = app.isPackaged
+        ? path.join(process.resourcesPath, 'dsh', 'dsh-home')
+        : path.resolve(__dirname, '..', '..', '..', 'dsh-poc', 'dsh-home');
+      if (fs.existsSync(tpl)) {
+        copyDirSync(tpl, home);
+        console.log('[dsh] 已从模板播种 DSH_HOME：', home);
+      } else {
+        fs.mkdirSync(path.join(home, 'profiles', 'web'), { recursive: true });
+      }
+    }
+  } catch (e) {
+    console.warn('[dsh] 准备 DSH_HOME 失败：', e.message);
+  }
+  return home;
+}
+
+/**
+ * 解析 dsh 启动方式，返回 { cmd, args, env }。
+ * 优先级：① 打包态内置 Node + 内置 dsh（零安装、离线可用）
+ *         ② 开发态仓库内 dsh-poc 本地依赖
+ *         ③ 兜底 PATH 中的 `dsh`（失败则由引导卡提示手动启动）
+ */
+function resolveDshLaunch() {
+  const env = { ...process.env, DSH_HOME: ensureDshHome() };
+  const nodeBin = bundledNodePath();
+  const entry = bundledDshEntry();
+  if (nodeBin && entry) return { cmd: nodeBin, args: [entry, '--profile', 'web'], env };
   if (!app.isPackaged) {
     const devBin = path.resolve(__dirname, '..', '..', '..', 'dsh-poc', 'node_modules', '.bin', 'dsh');
-    if (fs.existsSync(devBin)) return devBin;
+    if (fs.existsSync(devBin)) return { cmd: devBin, args: ['--profile', 'web'], env };
   }
-  return 'dsh';
+  return { cmd: 'dsh', args: ['--profile', 'web'], env };
 }
 
 /** 若 dsh 未在运行则自动拉起（--profile web）。失败仅记录，不阻塞应用。 */
@@ -44,13 +118,13 @@ function tryLaunchDsh() {
   if (process.env.LOCALFLOW_DSH_HOST) return;
   isDshUp(800).then((up) => {
     if (up) return; // 已在运行，无需拉起
-    const bin = findDshBinary();
-    const args = ['--profile', 'web'];
+    const launch = resolveDshLaunch();
     try {
-      dshProc = spawn(bin, args, {
+      dshProc = spawn(launch.cmd, launch.args, {
         stdio: ['ignore', 'pipe', 'pipe'],
         windowsHide: true,
         detached: false,
+        env: launch.env,
       });
       dshProc.stdout.on('data', (d) => process.stdout.write(`[dsh] ${d}`));
       dshProc.stderr.on('data', (d) => process.stderr.write(`[dsh] ${d}`));
@@ -60,7 +134,8 @@ function tryLaunchDsh() {
         console.log(`[dsh] 退出 code=${code}`);
         dshProc = null;
       });
-      console.log('[dsh] 已尝试自动拉起 dsh（--profile web）');
+      console.log('[dsh] 已尝试自动拉起：', launch.cmd, launch.args.join(' '),
+        '| DSH_HOME=', launch.env.DSH_HOME);
     } catch (e) {
       console.warn('[dsh] 自动拉起异常：', e.message);
     }

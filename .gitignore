@@ -13,6 +13,11 @@ dist/
 !desktop/build/
 !desktop/build/**
 
+# 但 bundle-dsh.mjs 生成的打包资源由 CI/本地构建时现生成，体积极大（dsh 依赖 ~270MB +
+# 便携 Node），绝不提交；注意这两行必须在上面的 !desktop/build/** 之后才能生效
+desktop/build/dsh-bundle/
+desktop/build/node-bundle/
+
 # 虚拟环境
 .venv/
 venv/

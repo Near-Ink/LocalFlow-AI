@@ -24,6 +24,17 @@ extraResources:
     to: backend
     filter:
       - "**/*"
+  # 内置 DeepSeek Harness（dsh）实现「下载即用、零安装」：由 scripts/bundle-dsh.mjs
+  # 产出的自包含 dsh 目录（node_modules + dsh-home 模板），已 patch 掉绝对路径。
+  - from: build/dsh-bundle
+    to: dsh
+    filter:
+      - "**/*"
+  # 内置便携式 Node 运行时，供主进程拉起 dsh（dsh 要求 >=22.19.0，系统未装 Node 也能跑）。
+  - from: build/node-bundle
+    to: node
+    filter:
+      - "**/*"
 
 # ── Windows ──────────────────────────────────────────────────────────────────
 win:

@@ -79,6 +79,28 @@ jobs:
         working-directory: desktop
         run: npm ci --no-audit --no-fund
 
+      # 内置 DeepSeek Harness（dsh）实现「下载即用、离线零安装」：
+      #   1) 先在 dsh-poc/ 下按 pnpm lockfile 装好依赖（Node 22，与内置便携 Node 版本一致，
+      #      保证 node-pty 等原生模块 ABI 匹配）；
+      #   2) 再由 scripts/bundle-dsh.mjs 物化为自包含资源 desktop/build/{dsh-bundle,node-bundle}，
+      #      electron-builder 随后把它们放进安装包 resources/dsh 与 resources/node。
+      - name: Install dsh-poc dependencies (pnpm workspace)
+        working-directory: dsh-poc
+        shell: bash
+        run: |
+          npm i -g pnpm@9
+          pnpm --version
+          pnpm install --no-frozen-lockfile --reporter=append-only
+
+      - name: Bundle dsh and portable Node runtime
+        working-directory: desktop
+        shell: bash
+        run: |
+          node scripts/bundle-dsh.mjs
+          test -d build/dsh-bundle || (echo "::error::dsh-bundle 未生成" && exit 1)
+          test -f build/node-bundle/node -o -f build/node-bundle/node.exe \
+            || (echo "::error::node-bundle 未生成" && exit 1)
+
       - name: Package with electron-builder
         working-directory: desktop
         shell: bash
