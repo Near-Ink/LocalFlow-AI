@@ -888,7 +888,9 @@ footer{margin-left:232px;padding:8px 20px;font-size:11px;color:var(--muted);back
         <ol class="dsh-guide-steps">
           <li>安装并启动 dsh（任选其一）：
             <pre>npx @deepseek-ai/dsh --profile web</pre>
-            或在仓库 <code>dsh-poc/</code> 下：<pre>pnpm install &amp;&amp; pnpm run dev</pre>
+            若已克隆仓库并在 <code>dsh-poc/</code> 下装好依赖，可直接运行：
+            <pre>node_modules/.bin/dsh --profile web</pre>
+            <span class="dsh-guide-tip">（注意：<code>dsh-poc/</code> 的 <code>package.json</code> 没有 <code>dev</code> 脚本，<code>pnpm run dev</code> 会报错。）</span>
           </li>
           <li>确认 dsh 已监听 <code>8080</code> 后，点击下方「重新连接」。</li>
         </ol>
