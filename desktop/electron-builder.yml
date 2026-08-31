@@ -55,11 +55,12 @@ mac:
   # 签名 / 公证（需 Apple Developer 凭据）：
   #   1) 提供 CSC_LINK(p12) + CSC_KEY_PASSWORD 让 electron-builder 完成 Developer ID 签名；
   #   2) 把下方 identity 改为 "Developer ID Application: <团队名> (<TEAM_ID>)"（缺省留空则跳过签名）；
-  #   3) 公证另需 APPLE_ID / APPLE_APP_SPECIFIC_PASSWORD / APPLE_TEAM_ID 三个环境变量，
-  #      由 afterSign 钩子 scripts/notarize.js 调用 @electron/notarize 完成。
-  # 注意：CI 中若未配置上述凭据，identity 留空、afterSign 自动跳过，仍可出包，
-  #       但该 dmg 在他人 Mac 上首次打开会被 Gatekeeper 拦截（需右键→打开 或 xattr 解除）。
-  afterSign: scripts/notarize.js
+  #   3) 公证用 electron-builder v24 内置 notarize 选项（底层仍是 @electron/notarize），
+  #      读取 CI 透传的 APPLE_ID / APPLE_APP_SPECIFIC_PASSWORD / APPLE_TEAM_ID 环境变量。
+  # 测试阶段走 Gatekeeper 绕行，notarize 设为 false 跳过公证；购买 Apple Developer 账号后
+  # 改为 true 即自动公证。该 dmg 在他人 Mac 上首次打开会被 Gatekeeper 拦截（需右键→打开 或 xattr 解除）。
+  # 注：afterSign 钩子在 electron-builder v22+ 已从 mac 段移除，故改用内置 notarize。
+  notarize: false
   entitlements: build/entitlements.mac.plist
   entitlementsInherit: build/entitlements.mac.plist
   # 发版前把下面尖括号内容替换为真实值，例如：
