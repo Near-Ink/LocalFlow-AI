@@ -3435,6 +3435,8 @@ async function updateHardware(){
 /* 头部迷你占用条 + 悬浮详情 */
 function updateMini(data, d){
   const gpu0 = d.gpus && d.gpus[0];
+  // Apple Silicon 无独立 GPU / 公开实时 GPU 利用率接口，gpu.utilization 实为 SoC 负载近似
+  const gpuLabel = (gpu0 && /Apple/i.test(gpu0.name || '')) ? 'SoC 负载' : 'GPU 负载';
   const setItem = (k, pct)=>{
     const el = document.querySelector(`.hm[data-k="${k}"]`);
     if(!el) return;
@@ -3452,7 +3454,7 @@ function updateMini(data, d){
     <div class="tt-title">实时占用 · <small>点击查看详情</small></div>
     <div class="tt-row"><span class="sw" style="background:#f59e0b"></span><span class="lb">CPU 负载</span><b>${Math.round(data.cpu.pct)}%</b></div>
     <div class="tt-row"><span class="sw" style="background:#2f6df6"></span><span class="lb">内存</span><b>${data.mem.cur} / ${memTot}</b></div>
-    <div class="tt-row"><span class="sw" style="background:#22c55e"></span><span class="lb">GPU 负载</span><b>${gpu0?gpu0.name+' · ':'— '}${Math.round(data.gpu.pct)}%</b></div>
+    <div class="tt-row"><span class="sw" style="background:#22c55e"></span><span class="lb">${gpuLabel}</span><b>${gpu0?gpu0.name+' · ':'— '}${Math.round(data.gpu.pct)}%</b></div>
     <div class="tt-row"><span class="sw" style="background:#a855f7"></span><span class="lb">显存(统一)</span><b>${data.vram.cur}${vramTot?(' / '+vramTot):''}</b></div>`;
 }
 

@@ -88,7 +88,7 @@ class SystemHardwareMonitor(HardwareMonitor):
             # Apple Silicon 统一内存：App 层面无独立显存，视总内存为共享显存池
             gpus.append(GPUInfo(
                 index=0,
-                name=self._chip_name() or "Apple Silicon",
+                name=self._apple_gpu_name(),
                 vram_total_mb=self._mem_total_mb(),
                 vram_used_mb=self._mem_used_mb(),
             ))
@@ -104,6 +104,21 @@ class SystemHardwareMonitor(HardwareMonitor):
             return out.stdout.strip() or None
         except Exception:
             return None
+
+    def _apple_gpu_name(self) -> str:
+        """用 system_profiler 取真实 GPU/SoC 型号名（如 Apple M4 / M4 Pro）。"""
+        try:
+            import re, subprocess
+            out = subprocess.run(
+                ["system_profiler", "SPDisplaysDataType"],
+                capture_output=True, text=True, timeout=3,
+            ).stdout
+            m = re.search(r"Apple\s+M\d+\s*(?:Pro|Max|Ultra)?", out)
+            if m:
+                return m.group(0)
+        except Exception:
+            pass
+        return self._chip_name() or "Apple Silicon"
 
     def _mem_total_mb(self) -> float:
         if self._psutil:
