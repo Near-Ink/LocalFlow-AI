@@ -13,6 +13,6 @@ pypdf>=4.0.0
 # NVIDIA GPU 监控（可选，没有 NVIDIA 也能跑）
 nvidia-ml-py>=12.535.108; platform_system == "Linux" or platform_system == "Windows"
 
-# 可选：LangGraph（进阶阶段深度使用，MVP 先不强制）
+# 可选（进阶增强，当前未启用）：子任务调度为自研 LLM 拆分骨架，不依赖以下库
 # langgraph>=0.1.0
 # langchain>=0.2.0

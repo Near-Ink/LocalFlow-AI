@@ -108,6 +108,12 @@ def _set_enable_cache(app, value) -> tuple:
         app.cache = SQLiteCache(db_path=app.config.data_dir / "cache.db")
     else:
         app.cache = None
+    # 同步给 Ollama 引擎，使其 chat 结果可被缓存/失效
+    if getattr(app, "local_engine", None) is not None:
+        try:
+            app.local_engine.cache = app.cache
+        except Exception:
+            pass
     return True, f"缓存已{'开启' if v else '关闭'}"
 
 

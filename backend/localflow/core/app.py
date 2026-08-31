@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
-from ..adapters.langgraph_scheduler import LangGraphScheduler
+from ..adapters.llm_split_scheduler import LLMSplitScheduler
 from ..adapters.ollama_engine import OllamaEngine
 from ..adapters.openai_engine import OpenAIEngine
 from ..adapters.react_agent import ReactAgent
@@ -106,12 +106,14 @@ class LocalFlowApp:
             self.cache = SQLiteCache(
                 db_path=self.config.data_dir / "cache.db"
             )
+        # 让 Ollama 引擎消费缓存（chat 结果按请求哈希缓存，省重复 Token）
+        self.local_engine.cache = self.cache
 
         # 硬件监控
         self.hardware: HardwareMonitor = SystemHardwareMonitor()
 
         # 子任务调度器
-        self.scheduler: TaskScheduler = LangGraphScheduler(engine=self.engine)
+        self.scheduler: TaskScheduler = LLMSplitScheduler(engine=self.engine)
 
         # --- Agent 功能（feature flag 灰度） ---
         # 阶段 0：装配工具注册表与 agent 槽位。阶段 1 注入 file/shell/clipboard

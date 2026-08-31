@@ -2,7 +2,7 @@
 
 本地 AI 桌面平台后端 — Python + FastAPI（Port & Adapter 六边形架构）。
 
-> 注：子任务调度目前为自研 LLM 拆分骨架（`adapters/langgraph_scheduler.py`，名字沿用历史），
+> 注：子任务调度为自研 LLM 拆分骨架（`adapters/llm_split_scheduler.py`，文件名历史沿用 langgraph），
 > 并未依赖 LangGraph 库；LangGraph 作为进阶阶段的可选增强，非当前依赖。
 
 ## 架构
@@ -20,7 +20,7 @@ localflow/
 │   ├── openai_engine.py     OpenAI 兼容云端
 │   ├── sqlite_cache.py      SQLite 缓存
 │   ├── sqlite_event.py      SQLite 事件存储
-│   ├── langgraph_scheduler.py  LangGraph 调度器
+│   ├── llm_split_scheduler.py  LLM 拆分调度器（骨架）
 │   └── system_hardware.py   系统硬件监控
 ├── core/          # 核心业务逻辑
 │   ├── app.py           应用主容器（装配所有 adapter）

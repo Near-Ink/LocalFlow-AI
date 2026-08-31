@@ -11,6 +11,7 @@ from typing import AsyncIterator, List, Optional
 
 import httpx
 
+from ..ports.cache import CacheEngine
 from ..ports.engine import (
     ChatMessage,
     ChatResponse,
@@ -50,6 +51,7 @@ class OllamaEngine(LLMEngine):
         self._client = httpx.AsyncClient(timeout=120.0)
         self._vision_cache: dict = {}  # model -> bool|None?；TTL 简单缓存
         self._tools_cache: dict = {}  # model -> bool（是否支持 function calling）
+        self.cache: Optional["CacheEngine"] = None  # 可选：接 app.cache 做 chat 结果缓存
 
     async def health(self) -> bool:
         try:
@@ -89,17 +91,16 @@ class OllamaEngine(LLMEngine):
                 return 0
             data = r.json()
             model_info = data.get("model_info", {}) or {}
-            params = data.get("parameters", "") or {}
-            # Ollama: num_ctx 在 model_info 的 *.context_length 或 parameters 的 num_ctx
+            params = data.get("parameters", "") or ""
+            # 优先：新版 Ollama 在 model_info 暴露 *.context_length
             for k, v in model_info.items():
                 if k.endswith(".context_length") and isinstance(v, int):
                     return v
-            if isinstance(params, dict):
-                pass
-            txt = str(params)
-            if "num_ctx" in txt:
-                pass
-            # fallback: 常见默认 2048/4096
+            # 退化：从 parameters 文本解析 num_ctx（形如 "num_ctx 4096"）
+            import re
+            m = re.search(r"num_ctx\D*?(\d+)", str(params))
+            if m:
+                return int(m.group(1))
             return 0
         except Exception:
             return 0
@@ -223,10 +224,47 @@ class OllamaEngine(LLMEngine):
         }
         if opts.tools:
             payload["tools"] = opts.tools
+        # 结果缓存（接 app.cache 时生效；tools 调用不缓存，避免污染）
+        cache_key = None
+        if self.cache is not None and not opts.tools:
+            cache_key = self._chat_cache_key(model, messages, opts)
+            try:
+                hit = await self.cache.get(cache_key, namespace="llm")
+                if hit is not None:
+                    import json as _json
+                    cached = _json.loads(hit.value)
+                    return ChatResponse(
+                        content=cached.get("content", ""),
+                        model=model,
+                        usage=cached.get("usage", {}) or {},
+                        finish_reason="stop",
+                        tool_calls=None,
+                        raw={},
+                    )
+            except Exception:
+                pass
         r = await self._client.post(f"{self.base_url}/api/chat", json=payload)
         r.raise_for_status()
         data = r.json()
         msg = data.get("message", {})
+        if cache_key is not None:
+            try:
+                import json as _json
+                await self.cache.set(
+                    cache_key,
+                    _json.dumps({
+                        "content": msg.get("content", ""),
+                        "usage": {
+                            "prompt_tokens": data.get("prompt_eval_count", 0),
+                            "completion_tokens": data.get("eval_count", 0),
+                            "total_tokens": data.get("prompt_eval_count", 0) + data.get("eval_count", 0),
+                        },
+                    }),
+                    namespace="llm",
+                    ttl=3600,
+                )
+            except Exception:
+                pass
         return ChatResponse(
             content=msg.get("content", ""),
             model=model,
@@ -239,6 +277,19 @@ class OllamaEngine(LLMEngine):
             tool_calls=_normalize_tool_calls(msg.get("tool_calls")),
             raw=data,
         )
+
+    def _chat_cache_key(self, model: str, messages: List[ChatMessage], opts: GenerateOptions) -> str:
+        """相同 (model, messages, options) 视为同一请求，缓存其完整回复。"""
+        import hashlib
+        import json as _json
+        payload = {
+            "model": model,
+            "messages": [self._msg_to_dict(m) for m in messages],
+            "opts": self._build_opts(opts),
+            "tools": bool(opts.tools),
+        }
+        blob = _json.dumps(payload, sort_keys=True, ensure_ascii=False)
+        return hashlib.sha256(blob.encode("utf-8")).hexdigest()
 
     async def chat_stream(
         self,

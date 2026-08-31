@@ -8,7 +8,7 @@ DSH 更新、后端更换时，只增改 adapter，不动 ports 与 core。
 - openai_engine.py    — OpenAI 兼容云端引擎
 - sqlite_cache.py     — SQLite 缓存（L1/L2）
 - sqlite_event.py     — SQLite 事件存储
-- langgraph_scheduler — LangGraph 子任务调度器（骨架）
+- llm_split_scheduler — LLM 拆分调度器（骨架）
 - system_hardware.py  — 系统级硬件监控
 
 进阶版可新增：
@@ -22,7 +22,7 @@ from .ollama_engine import OllamaEngine
 from .openai_engine import OpenAIEngine
 from .sqlite_cache import SQLiteCache
 from .sqlite_event import SQLiteEventStore
-from .langgraph_scheduler import LangGraphScheduler
+from .llm_split_scheduler import LLMSplitScheduler
 from .system_hardware import SystemHardwareMonitor
 
 __all__ = [
@@ -30,6 +30,6 @@ __all__ = [
     "OpenAIEngine",
     "SQLiteCache",
     "SQLiteEventStore",
-    "LangGraphScheduler",
+    "LLMSplitScheduler",
     "SystemHardwareMonitor",
 ]

@@ -1,9 +1,7 @@
-"""LangGraph 子任务调度器适配器 — 骨架实现
+"""LLM 子任务拆分调度器适配器 — 自研实现
 
-MVP 阶段先提供一个简化版：用 LLM 拆分子任务，串行执行。
-后续用 LangGraph 的图执行引擎增强并行/条件分支。
-
-注：当前为骨架版本，LangGraph 作为依赖在进阶阶段深度集成。
+MVP 阶段用 LLM 拆分子任务，串行执行（不依赖 LangGraph）。
+后续若要增强并行/条件分支，可在此之上引入图执行引擎。
 """
 
 from __future__ import annotations
@@ -26,10 +24,10 @@ SPLIT_PROMPT = """你是一个任务拆解专家。请将用户的任务拆分�
 """
 
 
-class LangGraphScheduler(TaskScheduler):
-    """基于 LangGraph 的子任务调度器（MVP 简化版）"""
+class LLMSplitScheduler(TaskScheduler):
+    """基于 LLM 拆分的子任务调度器（自研，不依赖 LangGraph）"""
 
-    name = "langgraph"
+    name = "llm_split"
 
     def __init__(self, engine: LLMEngine):
         self.engine = engine
