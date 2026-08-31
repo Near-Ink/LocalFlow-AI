@@ -36,7 +36,7 @@ LocalFlow AI 采用 **Port & Adapter（六边形架构）**，核心思想是：
 ┌──────────────────────────▼───────────────────────────────┐
 │            Adapters 具体实现层 (adapters/)               │
 │  Ollama · OpenAI · SQLite Cache · SQLite Event           │
-│  LangGraph Scheduler · System Hardware                   │
+│  LLMSplit Scheduler · System Hardware                   │
 │  （变更层，DSH 更新时只换这里）                            │
 └──────────────────────────────────────────────────────────┘
 ```

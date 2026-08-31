@@ -3,9 +3,12 @@
 > 含 DSH 同步迭代机制 · 面向「DSH 更新也能同步演进」设计
 > 四阶段最小闭环 + 可勾选任务 · MVP 预计 4–6 个月
 
-> ⚠️ **清单状态说明**：本清单为规划文档，任务项尚未回写完成状态。截至 v0.1.0，
-> 多数 A（地基）、B（缓存 + 云端协同）、C（桌面端 + 硬件监控）、D1（对外 OpenAI API）相关项
-> 已在代码中实现（详见 `backend/localflow/` 与 `desktop/src/`），请以代码与测试为最新进度依据。
+> ⚠️ **清单状态说明**：本清单为规划文档，任务项尚未逐条回写勾选。v0.1.0 已于 2026-08-31 发版；
+> A（地基）、C（桌面端 + 硬件监控）、D1（对外 OpenAI API）主体已在代码中实现；B（缓存 + 云端协同）的
+> **L1 chat 结果缓存已在发版后接线**（SQLite，`namespace=llm`，TTL 3600s）。请以 `backend/localflow/`
+> 与 `desktop/src/` 代码及测试为最新进度依据。
+> 发版后本地修正（待 `git push`）：子任务调度器由 `LangGraphScheduler` 更名为自研 `LLMSplitScheduler`
+> （不依赖 LangGraph）；`get_context_length` 修复；流式 token 估算改用一致启发式。
 
 ---
 
@@ -73,7 +76,7 @@
 - [ ] **A1 创建 GitHub 仓库，Apache-2.0，README 愿景 + 架构图**
   `P0`
 
-- [ ] **A2 工程底座：Python + FastAPI + LangGraph 骨架**
+- [ ] **A2 工程底座：Python + FastAPI + 自研 LLM 拆分调度骨架（不依赖 LangGraph）**
   packaging、配置、日志、异常体系，遵守 `ports/`+`adapters/` 目录。
   `P0 · 依赖 S1`
 
@@ -95,7 +98,7 @@
   事件 schema 用稳定领域模型（遵守 S4）。
   `P0 · 回溯`
 
-- [ ] **A7 SubAgent + LangGraph：拆分子任务 + 条件/并行执行脚手架**
+- [ ] **A7 SubAgent + 自研 LLM 拆分调度：拆分子任务 + 串行执行脚手架**
   完成标志：命令行可直接提问并触发本地/云端子任务链路。
   `P1`
 
@@ -105,10 +108,10 @@
 
 > 工期：5–6 周
 
-- [ ] **B1 L1 工具缓存：参数规范化 + hash Key + SQLite**
+- [ ] **B1 L1 缓存：chat 结果按请求哈希缓存到 SQLite（`namespace=llm`，TTL 3600s）** — 已在 v0.1.0 发版后接线（commit 74c8052）；`tool` / `subtask` 命名空间预留，业务接线规划中
   `P0`
 
-- [ ] **B2 L2 子任务缓存：结构化 / 提取 / 润色结果复用**
+- [ ] **B2 L2 子任务缓存：结构化 / 提取 / 润色结果复用** — 命名空间预留，业务接线规划中
   `P0`
 
 - [ ] **B3 单云端协同：OpenAI 兼容适配器 + 简单路由 + 预算熔断**
