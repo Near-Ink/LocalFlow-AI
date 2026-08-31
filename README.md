@@ -100,14 +100,14 @@ npm run dev
 
 从 [GitHub Releases](https://github.com/Near-Ink/LocalFlow-AI/releases) 下载对应平台安装包，双击安装即可，**Python 后端已内嵌并自动拉起**，无需配环境。
 
-| 平台 | 文件（v0.1.0） | 适用 |
+| 平台 | 文件（v0.1.1） | 适用 |
 |------|---------------|------|
-| 🍎 macOS · Apple Silicon | `LocalFlow.AI-0.1.0-arm64.dmg` | M1/M2/M3/M4 等新 Mac |
-| 🍎 macOS · Intel | `LocalFlow.AI-0.1.0-x64.dmg` | 老款 Intel Mac |
-| 🪟 Windows | `LocalFlow.AI-Setup-0.1.0-x64.exe` | Windows 10/11 64 位 |
-| 🐧 Linux | `LocalFlow.AI-0.1.0-x86_64.AppImage` | 主流 x86_64 发行版 |
+| 🍎 macOS · Apple Silicon | `LocalFlow AI-0.1.1-macOS-arm64.dmg` | M1/M2/M3/M4 等新 Mac |
+| 🪟 Windows | `LocalFlow AI-Setup-0.1.1-Windows-x64.exe` | Windows 10/11 64 位 |
+| 🐧 Linux | `LocalFlow AI-0.1.1-Linux-x64.AppImage` | 主流 x86_64 发行版 |
 
-> 💡 下一版起文件名会直接带平台标识（如 `LocalFlow.AI-0.1.0-macOS-arm64.dmg`），更易辨认；当前请按上表对应下载。
+> 💡 v0.1.1 起文件名已直接带平台标识（如 `LocalFlow AI-0.1.1-macOS-arm64.dmg`），按上表对应下载即可。
+> 🍎 **Intel Mac 用户注意**：v0.1.1 暂未提供 x64 dmg（当前 CI 仅构建 Apple Silicon 版），预计 v0.1.2 补全；期间可先在 Apple Silicon Mac / Windows / Linux 上使用。
 
 > [!WARNING]
 > **macOS 打不开？** 安装包**暂未做 Apple 开发者签名 / 公证**（测试阶段暂不购买账号），首次打开会被 Gatekeeper 拦截（提示「无法验证开发者」或「已损坏」）—— **这不是包损坏，按下面任选其一即可正常使用**：
