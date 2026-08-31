@@ -62,7 +62,8 @@ mac:
   afterSign: scripts/notarize.js
   entitlements: build/entitlements.mac.plist
   entitlementsInherit: build/entitlements.mac.plist
-  identity: null   # 发版前改为 "Developer ID Application: <团队名> (<TEAM_ID>)"
+  # identity: "Developer ID Application: <团队名> (<TEAM_ID>)"   # 发版前取消注释并填入真实证书
+  identity: null   # null = 暂不签名（仅开发/自测）；填上方 identity + 提供 CSC_LINK 后 CI 自动签名+公证
 
 dmg:
   title: "${productName} ${version}"
