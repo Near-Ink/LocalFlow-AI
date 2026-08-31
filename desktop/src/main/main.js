@@ -1,7 +1,7 @@
 // Electron 主进程
 // 负责：窗口管理、后端进程启动（打包后自动拉起内嵌 Python 后端）、IPC 通信
 
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const { spawn } = require('child_process');
 const path = require('path');
 const http = require('http');
@@ -38,6 +38,58 @@ async function monitorDsh(win) {
   const up = await isDshUp();
   try { win.webContents.send('dsh-status', up); } catch (e) { /* ignore */ }
   setTimeout(() => monitorDsh(win), 5000);
+}
+
+// ── Ollama（本地推理引擎）首启自检 ──────────────────────────────────────────
+// 应用唯一外部依赖是 Ollama；首次启动检测，缺失则引导安装，做到「打开即用」。
+const OLLAMA_PORT = 11434;
+const OLLAMA_HEALTH_URL = `http://127.0.0.1:${OLLAMA_PORT}/api/tags`;
+
+function isOllamaUp(timeoutMs = 1500) {
+  return new Promise((resolve) => {
+    const req = http.get(OLLAMA_HEALTH_URL, (res) => {
+      res.resume();
+      resolve(true);
+    });
+    req.setTimeout(timeoutMs, () => { req.destroy(); resolve(false); });
+    req.on('error', () => resolve(false));
+  });
+}
+
+/** 首启环境自检：Ollama 缺失时弹原生引导框，按平台分流一键安装 */
+async function ensureOllama() {
+  if (await isOllamaUp()) return;
+
+  const platform = process.platform;
+  const buttons =
+    platform === 'darwin'
+      ? ['用 Homebrew 安装', '打开官网下载', '我已完成，重试']
+      : ['打开官网下载', '我已完成，重试'];
+
+  const { response } = await dialog.showMessageBox({
+    type: 'info',
+    title: '需要 Ollama 本地推理引擎',
+    message: 'LocalFlow AI 依赖本机 Ollama 提供本地模型推理，当前未检测到 Ollama。',
+    detail: '按下方方式安装后，本应用即可直接使用，无需其他配置。',
+    buttons,
+    defaultId: 0,
+    cancelId: buttons.length - 1,
+  });
+
+  const choice = buttons[response];
+  if (choice === '用 Homebrew 安装') {
+    try {
+      spawn('brew', ['install', 'ollama'], { stdio: 'ignore' });
+      await new Promise((r) => setTimeout(r, 4000));
+      return ensureOllama(); // 安装后重试
+    } catch (e) {
+      shell.openExternal('https://ollama.com/download');
+    }
+  } else if (choice === '打开官网下载') {
+    shell.openExternal('https://ollama.com/download');
+  }
+  // 「我已完成，重试」或关闭：再探一次；仍未就绪也不强制退出（对话页仍可用）
+  if (await isOllamaUp()) return;
 }
 
 /** 探测后端是否已在运行（避免重复拉起） */
@@ -119,6 +171,7 @@ function createWindow() {
 app.whenReady().then(() => {
   createWindow();
   ensureBackend(); // 不阻塞窗口创建
+  ensureOllama(); // 不阻塞：缺失则弹引导框，按平台分流安装
   monitorDsh(mainWindow); // dsh 状态周期探测并推送给前端
 
   app.on('activate', () => {
@@ -158,6 +211,20 @@ ipcMain.handle('app:api-base', () => {
 ipcMain.handle('app:dsh-base', () => {
   // DeepSeek Harness 地址（默认本地 8080）
   return DSH_BASE;
+});
+
+ipcMain.handle('app:ollama-status', async () => await isOllamaUp());
+
+ipcMain.handle('app:install-ollama', async () => {
+  // 供渲染进程「一键安装」按钮调用：macOS 优先 brew，其余打开官网下载
+  if (process.platform === 'darwin') {
+    try {
+      spawn('brew', ['install', 'ollama'], { stdio: 'ignore' });
+      return { method: 'brew' };
+    } catch (e) { /* fallthrough 到官网 */ }
+  }
+  shell.openExternal('https://ollama.com/download');
+  return { method: 'web' };
 });
 
 ipcMain.handle('app:pick-directory', async () => {

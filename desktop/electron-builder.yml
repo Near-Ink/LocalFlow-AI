@@ -32,7 +32,7 @@ win:
       arch:
         - x64
   icon: build/icon.ico
-  artifactName: "${productName}-Setup-${version}-${arch}.${ext}"
+  artifactName: "${productName}-Setup-${version}-Windows-${arch}.${ext}"
 
 nsis:
   oneClick: false
@@ -51,7 +51,12 @@ mac:
   category: public.app-category.productivity
   darkModeSupport: true
   icon: build/icon.icns
-  artifactName: "${productName}-${version}-${arch}.${ext}"
+  artifactName: "${productName}-${version}-macOS-${arch}.${ext}"
+  # 签名 / 公证（需 Apple Developer 凭据）：提供 CSC_LINK(p12) + CSC_KEY_PASSWORD，
+  # 再把下方 identity 改为 "Developer ID Application: <团队> (<TEAM_ID>)"；公证另需
+  # APPLE_ID / APPLE_APP_SPECIFIC_PASSWORD / APPLE_TEAM_ID，配合 afterSign 钩子调用
+  # @electron/notarize（见 scripts/notarize.js）。
+  # identity: null   # null = 当前不签名（仅开发/自测用，发版前务必配置以过 Gatekeeper）
 
 dmg:
   title: "${productName} ${version}"
@@ -72,7 +77,7 @@ linux:
   category: Utility
   icon: build/icon.png
   maintainer: LocalFlow AI Team <dev@localflow.ai>
-  artifactName: "${productName}-${version}-${arch}.${ext}"
+  artifactName: "${productName}-${version}-Linux-${arch}.${ext}"
 
 # 发布说明：GitHub Actions（.github/workflows/build.yml）负责构建产物与
 # Release 创建（electron-builder 使用 --publish never，不在此处发布）。

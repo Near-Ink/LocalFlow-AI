@@ -64,7 +64,7 @@ LocalFlow AI/
 
 ## 🚀 快速开始
 
-**前置：安装 [Ollama](https://ollama.com) 并保持运行**（`ollama serve`）。
+**前置：本机需运行 [Ollama](https://ollama.com)**（客户端首次启动会自动检测，缺失时引导一键安装；也可 `ollama serve` 手动启动）。
 
 ### 方式一：源码运行
 
@@ -83,9 +83,23 @@ npm run dev
 #    http://127.0.0.1:8899  （前端由 python -m http.server 托管时）
 ```
 
-### 方式二：下载安装包
+### 方式二：下载安装包（推荐小白）
 
-从 [GitHub Releases](https://github.com/你的账号/localflow-ai/releases) 下载对应平台安装包（Windows Setup / macOS dmg / Linux AppImage），双击安装，后端已内嵌自动拉起。
+从 [GitHub Releases](https://github.com/Near-Ink/LocalFlow-AI/releases) 下载对应平台安装包，双击安装即可，**Python 后端已内嵌并自动拉起**，无需配环境。
+
+| 平台 | 文件（v0.1.0） | 适用 |
+|------|---------------|------|
+| 🍎 macOS · Apple Silicon | `LocalFlow.AI-0.1.0-arm64.dmg` | M1/M2/M3/M4 等新 Mac |
+| 🍎 macOS · Intel | `LocalFlow.AI-0.1.0-x64.dmg` | 老款 Intel Mac |
+| 🪟 Windows | `LocalFlow.AI-Setup-0.1.0-x64.exe` | Windows 10/11 64 位 |
+| 🐧 Linux | `LocalFlow.AI-0.1.0-x86_64.AppImage` | 主流 x86_64 发行版 |
+
+> 💡 下一版起文件名会直接带平台标识（如 `LocalFlow.AI-0.1.0-macOS-arm64.dmg`），更易辨认；当前请按上表对应下载。
+
+> ⚠️ **macOS 打不开？** 安装包暂未做 Apple 开发者签名 / 公证，首次打开会被 Gatekeeper 拦截（提示「无法验证开发者」或「已损坏」）。任选其一解决：
+> 1. 右键点击 App → 「打开」→ 再次确认即可；
+> 2. 终端执行 `sudo xattr -rd com.apple.quarantine "/Applications/LocalFlow AI.app"` 后重试。
+> 正式签名 + 公证需 Apple Developer 账号凭据，将在后续版本补齐。
 
 ## 🔌 对外 API（让其他 Agent 使用本机模型）
 
