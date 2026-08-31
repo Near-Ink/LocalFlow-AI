@@ -31,6 +31,7 @@ win:
     - target: nsis
       arch:
         - x64
+  icon: build/icon.ico
   artifactName: "${productName}-Setup-${version}-${arch}.${ext}"
 
 nsis:
@@ -49,8 +50,8 @@ mac:
         - x64
   category: public.app-category.productivity
   darkModeSupport: true
+  icon: build/icon.icns
   artifactName: "${productName}-${version}-${arch}.${ext}"
-  # 未配置 icns 时用默认 Electron 图标；正式发布前请放入 build/icon.icns
 
 dmg:
   title: "${productName} ${version}"
@@ -69,6 +70,7 @@ linux:
       arch:
         - x64
   category: Utility
+  icon: build/icon.png
   maintainer: LocalFlow AI Team <dev@localflow.ai>
   artifactName: "${productName}-${version}-${arch}.${ext}"
 
