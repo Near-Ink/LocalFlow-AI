@@ -7,10 +7,11 @@ set -e
 cd "$(dirname "$0")"
 BASE="${1:-}"
 
-SYS_PY="$(command -v python3 || true)"
-TRAE_PY="/Users/zhanghaoran/Library/Application Support/TRAE SOLO CN/ModularData/ai-agent/vm/tools/opt/python@3.10/3.10.20_3/libexec/bin/python3"
-PY="$SYS_PY"
-[ -n "$PY" ] || PY="$TRAE_PY"
+PY="$(command -v python3 || command -v python || true)"
+if [ -z "$PY" ]; then
+  echo "未找到 python3，请先安装 Python 3.10+ 并加入 PATH。" >&2
+  exit 1
+fi
 
 if [ -z "$BASE" ]; then
   echo "用法: ./publish.sh <托管后的根URL>"
@@ -28,7 +29,7 @@ echo " 你的托管站点，让线上的清单与本地一致。"
 echo ""
 echo " 然后在【系统终端】接入正式后端："
 echo "--------------------------------------------------------------"
-BACKEND="/Users/zhanghaoran/Documents/LocalFlow AI/backend"
+BACKEND="$(cd "$(dirname "$0")/.." && pwd)/backend"
 echo "  kill \$(lsof -t -iTCP:8765 -sTCP:LISTEN) && cd \"$BACKEND\" && \\"
 echo "  LOCALFLOW_WORKFLOW_SOURCES='[{\"id\":\"community\",\"name\":\"LocalFlow 社区\",\"url\":\"$BASE/manifest.json\"}]' \\"
 echo "  nohup ./start_localflow.sh &"

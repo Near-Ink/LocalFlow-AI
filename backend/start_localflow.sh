@@ -6,9 +6,14 @@ PORT="8765"
 LOG="$HOME/.localflow/backend.log"
 
 cd "$(dirname "$0")" || exit 1
+PY="$(command -v python3 || command -v python || true)"
+if [ -z "$PY" ]; then
+  echo "未找到 python3，请先安装 Python 3.10+ 并加入 PATH。" >&2
+  exit 1
+fi
 echo "启动 LocalFlow 后端 -> http://$HOST:$PORT  (日志: $LOG)"
 LOCALFLOW_ENABLE_AGENT=1 \
-  "/Users/zhanghaoran/Library/Application Support/TRAE SOLO CN/ModularData/ai-agent/vm/tools/opt/python@3.10/3.10.20_3/libexec/bin/python3" \
+  "$PY" \
   -m uvicorn localflow.main:app \
   --host "$HOST" --port "$PORT" \
   > "$LOG" 2>&1

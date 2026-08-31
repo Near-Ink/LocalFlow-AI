@@ -9,5 +9,5 @@ importers:
   .:
     dependencies:
       '@local/file-workspace-preview':
-        specifier: link:/Users/zhanghaoran/Documents/LocalFlow AI/dsh-poc/packages/file-workspace-preview
+        specifier: link:../../../packages/file-workspace-preview
         version: link:../../../packages/file-workspace-preview

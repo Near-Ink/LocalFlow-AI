@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@local/file-workspace-preview':
-        specifier: link:/Users/zhanghaoran/Documents/LocalFlow AI/dsh-poc/packages/file-workspace-preview
+        specifier: link:../../../packages/file-workspace-preview
         version: link:../../../packages/file-workspace-preview
       '@local/my-hello-plugin':
-        specifier: link:/Users/zhanghaoran/Documents/LocalFlow AI/dsh-poc/packages/my-hello-plugin
+        specifier: link:../../../packages/my-hello-plugin
         version: link:../../../packages/my-hello-plugin

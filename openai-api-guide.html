@@ -77,7 +77,7 @@
 <div class="step"><div class="stepno">1</div><div>
   <h3>重启正式后端并配置密钥</h3>
   <p>在系统终端重启用带 <code>LOCALFLOW_API_KEY</code> 的命令（把密钥换成你自己的）：</p>
-<pre><code>kill "$(lsof -t -iTCP:8765 -sTCP:LISTEN)" && cd "/Users/zhanghaoran/Documents/LocalFlow AI/backend" &amp;&amp; \
+<pre><code>kill "$(lsof -t -iTCP:8765 -sTCP:LISTEN)" && cd "<LOCALFLOW_AI>/backend" &amp;&amp; \
 LOCALFLOW_API_KEY=你的密钥 nohup ./start_localflow.sh &amp;</code></pre>
   <p class="mut">本机 Ollama 需在运行。不设置该环境变量则本机免鉴权（仅本机建议设置，见「安全」）。</p>
 </div></div>

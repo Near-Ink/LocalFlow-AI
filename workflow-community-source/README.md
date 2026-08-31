@@ -48,7 +48,7 @@ workflow-community-source/
 base 重新生成（不改的话 LocalFlow 拉不到模板）。最简单是用一键脚本：
 
 ```bash
-cd "/Users/zhanghaoran/Documents/LocalFlow AI/workflow-community-source" && ./publish.sh https://你的-xxx.netlify.app
+cd "<LOCALFLOW_AI>/workflow-community-source" && ./publish.sh https://你的-xxx.netlify.app
 ```
 
 `publish.sh` 会做两件事：
@@ -58,7 +58,7 @@ cd "/Users/zhanghaoran/Documents/LocalFlow AI/workflow-community-source" && ./pu
 等价的手动方式（若无脚本直接重跑也行）：
 
 ```bash
-cd "/Users/zhanghaoran/Documents/LocalFlow AI/workflow-community-source" && \
+cd "<LOCALFLOW_AI>/workflow-community-source" && \
 python3 build_manifest.py --base https://你的-xxx.netlify.app
 ```
 
@@ -70,7 +70,7 @@ python3 build_manifest.py --base https://你的-xxx.netlify.app
 重启 LocalFlow 后端时带上环境变量（JSON 数组，可配多个远程源）：
 
 ```bash
-kill "$(lsof -t -iTCP:8765 -sTCP:LISTEN)" && cd "/Users/zhanghaoran/Documents/LocalFlow AI/backend" && \
+kill "$(lsof -t -iTCP:8765 -sTCP:LISTEN)" && cd "<LOCALFLOW_AI>/backend" && \
 LOCALFLOW_WORKFLOW_SOURCES='[{"id":"community","name":"LocalFlow 社区","url":"https://youruser.github.io/localflow-community/manifest.json"}]' \
 nohup ./start_localflow.sh &
 ```
