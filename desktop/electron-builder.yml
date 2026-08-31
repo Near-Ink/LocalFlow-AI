@@ -62,8 +62,12 @@ mac:
   afterSign: scripts/notarize.js
   entitlements: build/entitlements.mac.plist
   entitlementsInherit: build/entitlements.mac.plist
-  # identity: "Developer ID Application: <团队名> (<TEAM_ID>)"   # 发版前取消注释并填入真实证书
-  identity: null   # null = 暂不签名（仅开发/自测）；填上方 identity + 提供 CSC_LINK 后 CI 自动签名+公证
+  # 发版前把下面尖括号内容替换为真实值，例如：
+  #   identity: "Developer ID Application: Zhang San (ABCDE12345)"
+  # ⚠️ 副作用提醒：在替换完成且已配置 CSC_LINK / Apple 凭据之前，此占位字符串会让 macOS
+  #   构建在签名阶段因找不到证书而失败，并连带阻断 Windows/Linux 的 Release 发布。
+  #   若想先出未签名 dmg（仍可被 xattr 解除），请把下一行改回 `identity: null` 并注释掉占位行。
+  identity: "Developer ID Application: <在此填团队名> (<TEAM_ID>)"
 
 dmg:
   title: "${productName} ${version}"
