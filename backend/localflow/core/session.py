@@ -141,8 +141,8 @@ class SessionManager:
             yield {"chunk": chunk, "done": False}
 
         content = "".join(parts)
-        # 流式场景下从引擎拿不到精确 token，用成品长度估算 completion_tokens
-        est = len(content)
+        # 流式场景下从引擎拿不到精确 token，用与 session_usage 一致的启发式估算
+        est = self._estimate_tokens(content)
         usage = {"prompt_tokens": 0, "completion_tokens": est, "total_tokens": est}
         await self.event_store.append(SessionEvent(
             session_id=session_id,
@@ -194,7 +194,7 @@ class SessionManager:
             yield {"chunk": chunk, "done": False}
 
         content = prefix + "".join(parts)
-        est = len(content)
+        est = self._estimate_tokens(content)
         usage = {"prompt_tokens": 0, "completion_tokens": est, "total_tokens": est}
         await self.event_store.append(SessionEvent(
             session_id=session_id,
