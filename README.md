@@ -12,7 +12,7 @@
 > 2. 终端执行下方命令解除隔离标记后重试：
 >
 > ```bash
-> sudo xattr -rd com.apple.quarantine "/Applications/LocalFlow AI.app"
+> sudo xattr -cr "/Applications/LocalFlow AI.app"
 > ```
 >
 > 绕过一次后即可正常双击打开。正式签名 + 公证将在后续版本补齐。
@@ -112,7 +112,7 @@ npm run dev
 > [!WARNING]
 > **macOS 打不开？** 安装包**暂未做 Apple 开发者签名 / 公证**（测试阶段暂不购买账号），首次打开会被 Gatekeeper 拦截（提示「无法验证开发者」或「已损坏」）—— **这不是包损坏，按下面任选其一即可正常使用**：
 > 1. **右键** `LocalFlow AI.app` → 「**打开**」→ 再次确认；
-> 2. 终端执行：`sudo xattr -rd com.apple.quarantine "/Applications/LocalFlow AI.app"` 后重试。
+> 2. 终端执行：`sudo xattr -cr "/Applications/LocalFlow AI.app"` 后重试。
 > 正式签名 + 公证将在后续版本补齐。
 
 ## 🔌 对外 API（让其他 Agent 使用本机模型）
