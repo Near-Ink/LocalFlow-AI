@@ -74,3 +74,9 @@ linux:
 
 # 发布说明：GitHub Actions（.github/workflows/build.yml）负责构建产物与
 # Release 创建（electron-builder 使用 --publish never，不在此处发布）。
+
+# v0.1.0 不启用自动更新；显式指定 github provider 仅为让 electron-builder
+# 在生成 update-info 时不再读取 null.provider 而报错（build.yml 已用
+# --publish never 阻止实际上传到 Release）。
+publish:
+  - provider: github
