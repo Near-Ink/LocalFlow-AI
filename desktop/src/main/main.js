@@ -4,21 +4,68 @@
 const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const { spawn } = require('child_process');
 const path = require('path');
+const fs = require('fs');
 const http = require('http');
 
 let mainWindow = null;
 let backendProc = null;
+let dshProc = null;
 
 const BACKEND_PORT = 8765;
 const BACKEND_HEALTH_URL = `http://127.0.0.1:${BACKEND_PORT}/api/health`;
 
 // DeepSeek Harness（dsh）：对话与 Agent 能力由它提供，默认 8080。
-// 安装包不内嵌 dsh（方案 A：引导用户自备），故只探测、不拉起。
+// 安装包不内嵌 dsh，但主进程会在其未运行时尝试自动拉起（开发模式用仓库内
+// dsh-poc 依赖；打包后用 PATH 中的 dsh）。拉起失败不报错，引导卡兜底提示手动启动。
 const DSH_PORT = 8080;
 const DSH_BASE = process.env.LOCALFLOW_DSH_HOST
   ? `http://${process.env.LOCALFLOW_DSH_HOST}`
   : `http://127.0.0.1:8080`;
 const DSH_HEALTH_URL = `${DSH_BASE}/`;
+
+/**
+ * 定位 dsh 可执行文件：
+ *  1) 开发模式：优先用仓库内 dsh-poc 的本地依赖（无需全局安装）
+ *  2) 打包模式：交给 PATH 中的 `dsh` 解析（用户自行全局安装）
+ *  3) 都不存在时返回 'dsh'，由 spawn 解析 PATH；若仍失败则引导卡兜底
+ */
+function findDshBinary() {
+  if (!app.isPackaged) {
+    const devBin = path.resolve(__dirname, '..', '..', '..', 'dsh-poc', 'node_modules', '.bin', 'dsh');
+    if (fs.existsSync(devBin)) return devBin;
+  }
+  return 'dsh';
+}
+
+/** 若 dsh 未在运行则自动拉起（--profile web）。失败仅记录，不阻塞应用。 */
+function tryLaunchDsh() {
+  if (dshProc) return;
+  // 用户显式指定了远端 dsh 时，不自动拉起本地实例
+  if (process.env.LOCALFLOW_DSH_HOST) return;
+  isDshUp(800).then((up) => {
+    if (up) return; // 已在运行，无需拉起
+    const bin = findDshBinary();
+    const args = ['--profile', 'web'];
+    try {
+      dshProc = spawn(bin, args, {
+        stdio: ['ignore', 'pipe', 'pipe'],
+        windowsHide: true,
+        detached: false,
+      });
+      dshProc.stdout.on('data', (d) => process.stdout.write(`[dsh] ${d}`));
+      dshProc.stderr.on('data', (d) => process.stderr.write(`[dsh] ${d}`));
+      dshProc.on('error', (e) =>
+        console.warn('[dsh] 自动拉起失败（可忽略，引导卡会提示手动启动）：', e.message));
+      dshProc.on('exit', (code) => {
+        console.log(`[dsh] 退出 code=${code}`);
+        dshProc = null;
+      });
+      console.log('[dsh] 已尝试自动拉起 dsh（--profile web）');
+    } catch (e) {
+      console.warn('[dsh] 自动拉起异常：', e.message);
+    }
+  });
+}
 
 /** 探测 dsh 是否在运行（方案 A：仅探测，不拉起） */
 function isDshUp(timeoutMs = 1500) {
@@ -34,6 +81,7 @@ function isDshUp(timeoutMs = 1500) {
 
 /** 周期推送 dsh 可达状态给渲染进程，驱动「引导卡 / 对话页」切换 */
 async function monitorDsh(win) {
+  // 注：主进程已尝试自动拉起 dsh（tryLaunchDsh）；此处仅周期探测、不重复拉起
   if (!win || win.isDestroyed()) return;
   const up = await isDshUp();
   try { win.webContents.send('dsh-status', up); } catch (e) { /* ignore */ }
@@ -171,6 +219,7 @@ function createWindow() {
 app.whenReady().then(() => {
   createWindow();
   ensureBackend(); // 不阻塞窗口创建
+  tryLaunchDsh(); // 未运行时自动拉起对话引擎（失败则引导卡兜底）
   ensureOllama(); // 不阻塞：缺失则弹引导框，按平台分流安装
   monitorDsh(mainWindow); // dsh 状态周期探测并推送给前端
 
@@ -187,10 +236,13 @@ app.on('window-all-closed', () => {
   }
 });
 
-// 退出时清理后端子进程
+// 退出时清理子进程
 app.on('will-quit', () => {
   if (backendProc && !backendProc.killed) {
     try { backendProc.kill(); } catch (e) { /* ignore */ }
+  }
+  if (dshProc && !dshProc.killed) {
+    try { dshProc.kill(); } catch (e) { /* ignore */ }
   }
 });
 
