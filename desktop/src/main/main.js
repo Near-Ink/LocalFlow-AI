@@ -32,8 +32,45 @@ const DSH_HEALTH_URL = `${DSH_BASE}/`;
  *    dsh-app-boot 等传递依赖并不存在于顶层 node_modules，从顶层启动会 MODULE_NOT_FOUND。
  *    hash 随依赖图变化，故运行时按前缀动态查找，避免写死。
  */
+/**
+ * 内置 dsh 的「安装位置」：userData/dsh-install。
+ * 打包后主进程会把 resources/{dsh/node_modules, node} 解包到这里（带版本标记），
+ * 实现「首次启动检测 → 已装则比对版本、不符则更新 → 未装则安装」的受控生命周期，
+ * 且安装副本可写、不依赖只读的 app 包。DSH_HOME 仍单独播种在 userData/dsh-home。
+ */
+function dshInstallDir() {
+  return path.join(app.getPath('userData'), 'dsh-install');
+}
+
+/** 在 userData/dsh-install 中按 .pnpm hash 动态查找 dsh 入口（物化后必须从 .pnpm 启动） */
+function dshInstallEntry() {
+  const pnpmDir = path.join(dshInstallDir(), 'node_modules', '.pnpm');
+  if (!fs.existsSync(pnpmDir)) return null;
+  try {
+    const hit = fs.readdirSync(pnpmDir).find((n) => n.startsWith('@deepseek-ai+dsh@'));
+    if (!hit) return null;
+    const p = path.join(pnpmDir, hit, 'node_modules', '@deepseek-ai', 'dsh', 'lib', 'bin.js');
+    return fs.existsSync(p) ? p : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+/** 在 userData/dsh-install 中查找内置便携 Node */
+function dshInstallNode() {
+  const exe = process.platform === 'win32' ? 'node.exe' : 'node';
+  const p = path.join(dshInstallDir(), 'node', exe);
+  return fs.existsSync(p) ? p : null;
+}
+
 function bundledDshEntry() {
   if (!app.isPackaged) return null;
+  // 优先已安装副本，回退 resources 内嵌包（保证开发/回退可用）
+  return dshInstallEntry() || bundledDshEntryFromResources();
+}
+
+/** resources/dsh 内嵌包中的 dsh 入口（回退路径） */
+function bundledDshEntryFromResources() {
   const pnpmDir = path.join(process.resourcesPath, 'dsh', 'node_modules', '.pnpm');
   if (!fs.existsSync(pnpmDir)) return null;
   try {
@@ -46,12 +83,210 @@ function bundledDshEntry() {
   }
 }
 
-/** 打包后内置便携 Node（resources/node/node，Windows 为 node.exe） */
+/** 打包后内置便携 Node（优先 userData/dsh-install/node，回退 resources/node/node，Windows 为 node.exe） */
 function bundledNodePath() {
   if (!app.isPackaged) return null;
   const exe = process.platform === 'win32' ? 'node.exe' : 'node';
+  const inst = path.join(dshInstallDir(), 'node', exe);
+  if (fs.existsSync(inst)) return inst;
   const p = path.join(process.resourcesPath, 'node', exe);
   return fs.existsSync(p) ? p : null;
+}
+
+// ── 内置 dsh 受控安装 / 更新生命周期 ──────────────────────────────────────
+// 打包后把 resources/{dsh/node_modules, node} 解包到 userData/dsh-install，
+// 首次启动检测已装版本、不符则更新、未装则安装，全程经 dsh-install IPC 推送进度。
+
+/** 读取 resources 内嵌 dsh 的版本（用于比对是否需要更新） */
+function readBundledDshVersion() {
+  const pnpmDir = path.join(process.resourcesPath, 'dsh', 'node_modules', '.pnpm');
+  if (!fs.existsSync(pnpmDir)) return null;
+  try {
+    const hit = fs.readdirSync(pnpmDir).find((n) => n.startsWith('@deepseek-ai+dsh@'));
+    if (!hit) return null;
+    const pkg = path.join(pnpmDir, hit, 'node_modules', '@deepseek-ai', 'dsh', 'package.json');
+    if (!fs.existsSync(pkg)) return null;
+    try { return JSON.parse(fs.readFileSync(pkg, 'utf8')).version || null; } catch (e) { return null; }
+  } catch (e) {
+    return null;
+  }
+}
+
+/** 读取已安装副本的版本标记（userData/dsh-install/.version） */
+function readInstalledDshVersion() {
+  try {
+    const f = path.join(dshInstallDir(), '.version');
+    return fs.existsSync(f) ? fs.readFileSync(f, 'utf8').trim() : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+/** 递归统计目录（或单文件）总字节数，用于进度百分比 */
+function countBytes(root) {
+  let total = 0;
+  let st;
+  try { st = fs.statSync(root); } catch (e) { return 0; }
+  if (st.isFile()) return st.size;
+  const walk = (d) => {
+    let s;
+    try { s = fs.statSync(d); } catch (e) { return; }
+    if (s.isDirectory()) {
+      let es;
+      try { es = fs.readdirSync(d, { withFileTypes: true }); } catch (e) { return; }
+      for (const e of es) walk(path.join(d, e.name));
+    } else if (s.isFile()) {
+      total += s.size;
+    }
+  };
+  walk(root);
+  return total;
+}
+
+/**
+ * 递归复制（目录/单文件均可），按已复制字节数回调进度，并周期性让出主线程以刷新进度条。
+ * counter: { total, copied } 在多次复制之间共享，emit(copied, total) 推送进度。
+ */
+async function copyTreeWithProgress(src, dest, counter, emit) {
+  let st;
+  try { st = fs.statSync(src); } catch (e) { return; }
+  if (st.isFile()) {
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    fs.copyFileSync(src, dest);
+    counter.copied += st.size;
+    emit(counter.copied, counter.total);
+    await new Promise((r) => setImmediate(r));
+    return;
+  }
+  fs.mkdirSync(dest, { recursive: true });
+  let lastEmit = counter.copied;
+  const copyDir = async (s, d) => {
+    fs.mkdirSync(d, { recursive: true });
+    const es = fs.readdirSync(s, { withFileTypes: true });
+    for (const e of es) {
+      const sp = path.join(s, e.name);
+      const dp = path.join(d, e.name);
+      if (e.isSymbolicLink()) {
+        let real;
+        try { real = fs.realpathSync(sp); } catch (err) { continue; }
+        let rs;
+        try { rs = fs.statSync(real); } catch (err) { continue; }
+        if (rs.isDirectory()) await copyDir(real, dp);
+        else { fs.copyFileSync(real, dp); counter.copied += rs.size; maybeEmit(); }
+      } else if (e.isDirectory()) {
+        await copyDir(sp, dp);
+      } else {
+        let sz = 0;
+        try { sz = fs.statSync(sp).size; } catch (err) { sz = 0; }
+        fs.copyFileSync(sp, dp);
+        counter.copied += sz;
+        maybeEmit();
+      }
+    }
+  };
+  const maybeEmit = () => {
+    if (counter.copied - lastEmit > 8 * 1024 * 1024) {
+      lastEmit = counter.copied;
+      emit(counter.copied, counter.total);
+    }
+  };
+  await copyDir(src, dest);
+}
+
+/** dsh 安装进度的最新状态（供渲染进程加载时取快照，规避事件竞态） */
+let lastDshInstallState = { status: 'idle' };
+let ensuringDsh = false;
+
+function sendDshInstall(win, state) {
+  lastDshInstallState = { ...lastDshInstallState, ...state };
+  if (win && !win.isDestroyed()) {
+    try { win.webContents.send('dsh-install', lastDshInstallState); } catch (e) { /* ignore */ }
+  }
+}
+
+const MB = (b) => `${(b / 1024 / 1024).toFixed(0)} MB`;
+
+/**
+ * 受控安装/更新：检测内置 dsh 版本，与已装版本比对。
+ * - 已装且版本一致 → 直接 ready（不复制）
+ * - 未装或版本不符 → 把 resources/{dsh/node_modules, node} 解包到 userData/dsh-install（带进度），写版本标记并播种 DSH_HOME
+ * 失败推送 status:'error'，由前端提供重试。
+ */
+async function ensureDsh(win) {
+  if (!app.isPackaged) {
+    lastDshInstallState = { status: 'idle' };
+    return; // 开发态直接用 dsh-poc，无需解包
+  }
+  if (ensuringDsh) return;
+  ensuringDsh = true;
+  try {
+    const bundledVer = readBundledDshVersion();
+    const installedVer = readInstalledDshVersion();
+    sendDshInstall(win, {
+      status: 'progress', phase: 'checking', percent: 0,
+      message: installedVer ? `已安装版本 ${installedVer}` : '未检测到已安装版本',
+    });
+
+    // 已安装且版本一致 → 无需解包
+    if (installedVer && bundledVer && installedVer === bundledVer) {
+      ensureDshHome();
+      sendDshInstall(win, {
+        status: 'done', phase: 'ready', percent: 100, uptodate: true,
+        message: `已是最新版本（${installedVer}）`,
+      });
+      return;
+    }
+
+    const reason = installedVer
+      ? `从 ${installedVer} 更新到 ${bundledVer}`
+      : `首次安装 ${bundledVer}`;
+    const nmSrc = path.join(process.resourcesPath, 'dsh', 'node_modules');
+    const nodeSrc = path.join(process.resourcesPath, 'node');
+    const counter = { total: countBytes(nmSrc) + countBytes(nodeSrc), copied: 0 };
+    const destRoot = dshInstallDir();
+
+    sendDshInstall(win, { status: 'progress', phase: 'copying', percent: 0, message: `准备${reason}…` });
+    try {
+      // 版本不符时先清空旧安装目录，保证干净覆盖
+      fs.rmSync(destRoot, { recursive: true, force: true });
+      const emit = (c, t) => {
+        const pct = t ? (c / t) * 100 : 0;
+        sendDshInstall(win, {
+          status: 'progress', phase: 'copying', percent: pct,
+          message: `已解包 ${MB(c)} / ${MB(t)}（${reason}）`,
+        });
+      };
+      await copyTreeWithProgress(nmSrc, path.join(destRoot, 'node_modules'), counter, emit);
+      await copyTreeWithProgress(nodeSrc, path.join(destRoot, 'node'), counter, emit);
+      emit(counter.copied, counter.total);
+
+      // 确保便携 Node 保留可执行位（跨平台复制偶发丢失执行位）
+      try {
+        const nodeExe = path.join(destRoot, 'node', process.platform === 'win32' ? 'node.exe' : 'node');
+        if (fs.existsSync(nodeExe)) fs.chmodSync(nodeExe, 0o755);
+      } catch (e) { /* ignore */ }
+
+      fs.writeFileSync(path.join(destRoot, '.version'), bundledVer || '', 'utf8');
+      sendDshInstall(win, { status: 'progress', phase: 'seeding', percent: 100, message: '正在初始化配置…' });
+
+      // 播种可写 DSH_HOME（含 settings.yaml，配置 local-flow provider）
+      ensureDshHome();
+
+      sendDshInstall(win, {
+        status: 'done', phase: 'ready', percent: 100, uptodate: false,
+        message: `安装完成（${bundledVer}）`,
+      });
+    } catch (e) {
+      sendDshInstall(win, {
+        status: 'error',
+        phase: 'copying',
+        percent: counter.total ? (counter.copied / counter.total) * 100 : 0,
+        message: e && e.message ? e.message : String(e),
+      });
+    }
+  } finally {
+    ensuringDsh = false;
+  }
 }
 
 /** 递归复制目录，跳过会话/存储/截图等隐私与运行态数据 */
@@ -323,9 +558,11 @@ function createWindow() {
 
 // === 生命周期 ===
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   createWindow();
   ensureBackend(); // 不阻塞窗口创建
+  // 先确保内置 dsh 已安装/更新（带进度条），再拉起对话引擎
+  await ensureDsh(mainWindow);
   tryLaunchDsh(); // 未运行时自动拉起对话引擎（失败则引导卡兜底）
   ensureOllama(); // 不阻塞：缺失则弹引导框，按平台分流安装
   monitorDsh(mainWindow); // dsh 状态周期探测并推送给前端
@@ -370,6 +607,19 @@ ipcMain.handle('app:api-base', () => {
 ipcMain.handle('app:dsh-base', () => {
   // DeepSeek Harness 地址（默认本地 8080）
   return DSH_BASE;
+});
+
+ipcMain.handle('app:dsh-install-state', () => {
+  // 渲染进程加载时取一次快照，规避早期进度事件竞态
+  return lastDshInstallState;
+});
+
+ipcMain.handle('app:dsh-install-retry', async () => {
+  // 安装失败后「重试」：清空失败的安装目录并重新解包
+  if (!app.isPackaged) return { status: 'idle' };
+  try { fs.rmSync(dshInstallDir(), { recursive: true, force: true }); } catch (e) { /* ignore */ }
+  await ensureDsh(mainWindow);
+  return lastDshInstallState;
 });
 
 ipcMain.handle('app:ollama-status', async () => await isOllamaUp());

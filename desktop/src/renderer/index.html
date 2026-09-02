@@ -774,6 +774,15 @@ footer{margin-left:232px;padding:8px 20px;font-size:11px;color:var(--muted);back
 .dsh-guide-tip{margin-top:12px;font-size:12px;color:#94a3b8;}
 .btn-primary{margin-top:10px;padding:9px 18px;border:none;border-radius:8px;background:#2563eb;color:#fff;font-size:14px;cursor:pointer;}
 .btn-primary:hover{background:#1d4ed8;}
+/* 对话引擎自动安装/更新进度条 */
+.dsh-progress{margin:16px 0 6px;height:10px;border-radius:6px;background:#e2e8f0;overflow:hidden;}
+.dsh-progress-fill{height:100%;width:0;background:linear-gradient(90deg,#2563eb,#7c3aed);transition:width .25s ease;}
+.dsh-progress-pct{font-size:13px;color:#475569;text-align:right;font-variant-numeric:tabular-nums;}
+#dsh-install-msg{margin-top:8px;font-size:13px;color:#475569;line-height:1.65;}
+#dsh-install-wrap .dsh-guide-logo{margin-bottom:6px;}
+.dsh-install-spinner{display:inline-block;width:14px;height:14px;border:2px solid #cbd5e1;border-top-color:#2563eb;border-radius:50%;animation:dshspin .8s linear infinite;vertical-align:-2px;margin-right:6px;}
+@keyframes dshspin{to{transform:rotate(360deg);}}
+.dsh-guide-error{margin-top:10px;font-size:13px;color:#dc2626;line-height:1.6;}
 /* 本地对话区历史/输入已由 dsh 承担，隐藏本地原有控件 */
 #view-chat .chat-scroll,
 #view-chat .input-bar,
@@ -881,21 +890,35 @@ footer{margin-left:232px;padding:8px 20px;font-size:11px;color:var(--muted);back
     <!-- dsh 不可达时的引导卡（方案 A：不因缺失 dsh 而白屏） -->
     <div id="dsh-guide" class="dsh-guide" hidden>
       <div class="dsh-guide-card">
-        <div class="dsh-guide-logo">L</div>
-        <h2>对话引擎未连接</h2>
-        <p>LocalFlow 的对话与 Agent 能力由 <b>DeepSeek Harness（dsh）</b> 提供，当前未在
-          <code id="dsh-host-hint">127.0.0.1:8080</code> 检测到 dsh 服务。</p>
-        <ol class="dsh-guide-steps">
-          <li>安装并启动 dsh（任选其一）：
-            <pre>npx @deepseek-ai/dsh --profile web</pre>
-            若已克隆仓库并在 <code>dsh-poc/</code> 下装好依赖，可直接运行：
-            <pre>node_modules/.bin/dsh --profile web</pre>
-            <span class="dsh-guide-tip">（注意：<code>dsh-poc/</code> 的 <code>package.json</code> 没有 <code>dev</code> 脚本，<code>pnpm run dev</code> 会报错。）</span>
-          </li>
-          <li>确认 dsh 已监听 <code>8080</code> 后，点击下方「重新连接」。</li>
-        </ol>
-        <button id="dsh-retry" class="btn-primary">重新连接</button>
-        <p class="dsh-guide-tip">未安装 dsh 也可使用「部署模型 / 硬件监控 / 对外 API / 设置」等本地功能。</p>
+        <!-- 自动安装 / 更新中（内置 dsh 零安装，带进度条） -->
+        <div id="dsh-install-wrap" hidden>
+          <div class="dsh-guide-logo">L</div>
+          <h2 id="dsh-install-title">正在准备对话引擎…</h2>
+          <p id="dsh-install-msg"></p>
+          <div class="dsh-progress"><div class="dsh-progress-fill" id="dsh-progress-fill"></div></div>
+          <div class="dsh-progress-pct" id="dsh-progress-pct">0%</div>
+          <p class="dsh-guide-tip">首次使用会解包内置的 DeepSeek Harness 与便携 Node 运行时，请稍候；更新时会自动覆盖到最新版本。</p>
+          <p class="dsh-guide-error" id="dsh-install-error" hidden></p>
+          <button id="dsh-install-retry" class="btn-primary" hidden>重试安装</button>
+        </div>
+        <!-- 手动引导（不可达 / 安装失败兜底） -->
+        <div id="dsh-manual-wrap">
+          <div class="dsh-guide-logo">L</div>
+          <h2>对话引擎未连接</h2>
+          <p>LocalFlow 的对话与 Agent 能力由 <b>DeepSeek Harness（dsh）</b> 提供，当前未在
+            <code id="dsh-host-hint">127.0.0.1:8080</code> 检测到 dsh 服务。</p>
+          <ol class="dsh-guide-steps">
+            <li>安装并启动 dsh（任选其一）：
+              <pre>npx @deepseek-ai/dsh --profile web</pre>
+              若已克隆仓库并在 <code>dsh-poc/</code> 下装好依赖，可直接运行：
+              <pre>node_modules/.bin/dsh --profile web</pre>
+              <span class="dsh-guide-tip">（注意：<code>dsh-poc/</code> 的 <code>package.json</code> 没有 <code>dev</code> 脚本，<code>pnpm run dev</code> 会报错。）</span>
+            </li>
+            <li>确认 dsh 已监听 <code>8080</code> 后，点击下方「重新连接」。</li>
+          </ol>
+          <button id="dsh-retry" class="btn-primary">重新连接</button>
+          <p class="dsh-guide-tip">未安装 dsh 也可使用「部署模型 / 硬件监控 / 对外 API / 设置」等本地功能。</p>
+        </div>
       </div>
     </div>
     <div class="chat-scroll" id="chat-scroll">
@@ -1111,21 +1134,108 @@ async function getApiBase(){
   const _df = document.getElementById('dsh-frame');
   const _guide = document.getElementById('dsh-guide');
   const _hint = document.getElementById('dsh-host-hint');
+  const _installWrap = document.getElementById('dsh-install-wrap');
+  const _manualWrap = document.getElementById('dsh-manual-wrap');
+  const _installTitle = document.getElementById('dsh-install-title');
+  const _installMsg = document.getElementById('dsh-install-msg');
+  const _progressFill = document.getElementById('dsh-progress-fill');
+  const _progressPct = document.getElementById('dsh-progress-pct');
+  const _installErr = document.getElementById('dsh-install-error');
+  const _installRetry = document.getElementById('dsh-install-retry');
+  const _retry = document.getElementById('dsh-retry');
   if(_hint) _hint.textContent = _dshBase.replace(/^https?:\/\//, '');
+
+  let _installTimer = null;
+  const clearInstallTimer = () => { if(_installTimer){ clearTimeout(_installTimer); _installTimer = null; } };
   function setDshSrc(){
     if(_df) _df.src = _dshBase + '/?v=' + Date.now();
   }
   function showDshGuide(show){
     if(_guide) _guide.hidden = !show;
   }
-  // dsh 不可达 → 显示引导卡而非白屏；可达 → 加载 iframe
-  if(window.localflow && window.localflow.onDshStatus){
-    window.localflow.onDshStatus((up)=>{ showDshGuide(!up); if(up) setDshSrc(); });
+  function showInstallCard(){
+    if(_installWrap) _installWrap.hidden = false;
+    if(_manualWrap) _manualWrap.hidden = true;
+    showDshGuide(true);
   }
-  // 初始状态：先探一次（主进程会推送 dsh-status）；同时给一个保底轮询
+  function showManualCard(){
+    if(_installWrap) _installWrap.hidden = true;
+    if(_manualWrap) _manualWrap.hidden = false;
+    showDshGuide(true);
+  }
+
+  // 渲染对话引擎安装/更新进度（主进程推送 dsh-install 事件）
+  function renderDshInstall(s){
+    if(!s || !s.status) return;
+    if(s.status === 'error'){
+      showInstallCard();
+      if(_installTitle) _installTitle.textContent = '对话引擎安装失败';
+      if(_installMsg) _installMsg.textContent = '内置安装包解包失败，可点击下方重试，或按下方手动方式连接。';
+      if(_progressFill) _progressFill.style.width = '100%';
+      if(_progressPct) _progressPct.textContent = '失败';
+      if(_installErr){ _installErr.hidden = false; _installErr.textContent = s.message || ''; }
+      if(_installRetry) _installRetry.hidden = false;
+      clearInstallTimer();
+      return;
+    }
+    if(s.status === 'done'){
+      if(_installErr) _installErr.hidden = true;
+      if(_installRetry) _installRetry.hidden = true;
+      if(_installTitle) _installTitle.textContent = s.uptodate ? '对话引擎已就绪' : '对话引擎安装完成';
+      if(_installMsg) _installMsg.textContent = s.uptodate
+        ? '当前已是最新版本，正在连接对话引擎…' : '正在启动对话引擎，请稍候…';
+      if(_progressFill) _progressFill.style.width = '100%';
+      if(_progressPct) _progressPct.textContent = '100%';
+      showDshGuide(true);
+      // 已装好但 dsh 进程可能还在启动，给一个兜底：超时未连上则转手动引导
+      clearInstallTimer();
+      _installTimer = setTimeout(() => { if(_installWrap && !_installWrap.hidden){ /* 仍显示则转手动 */ showManualCard(); } }, 25000);
+      return;
+    }
+    // progress：checking / copying / seeding 等阶段
+    showInstallCard();
+    if(_installErr) _installErr.hidden = true;
+    if(_installRetry) _installRetry.hidden = true;
+    const phaseTxt = {
+      checking: '正在检测对话引擎（DeepSeek Harness）…',
+      copying: '正在安装对话引擎与环境依赖…',
+      seeding: '正在初始化对话引擎配置…',
+    };
+    if(_installTitle) _installTitle.textContent = phaseTxt[s.phase] || '正在准备对话引擎…';
+    if(_installMsg) _installMsg.textContent = s.message || '';
+    const pct = (typeof s.percent === 'number' && !isNaN(s.percent))
+      ? Math.max(0, Math.min(100, Math.round(s.percent))) : 0;
+    if(_progressFill) _progressFill.style.width = pct + '%';
+    if(_progressPct) _progressPct.textContent = pct + '%';
+  }
+  if(window.localflow && window.localflow.onDshInstall){
+    window.localflow.onDshInstall((s) => renderDshInstall(s));
+  }
+  // 加载时先取一次快照，避免错过主进程早期事件（时序竞态保护）
+  if(window.localflow && window.localflow.getDshInstallState){
+    try{
+      const _st = await window.localflow.getDshInstallState();
+      if(_st && _st.status && _st.status !== 'idle') renderDshInstall(_st);
+    }catch(e){ /* ignore */ }
+  }
+  // 安装失败「重试」按钮：请主进程重新解包
+  if(_installRetry && window.localflow && window.localflow.retryDshInstall){
+    _installRetry.addEventListener('click', async () => {
+      _installRetry.hidden = true;
+      if(_installErr) _installErr.hidden = true;
+      await window.localflow.retryDshInstall();
+    });
+  }
+  // dsh 不可达 → 若安装卡仍可见则保持，否则显示手动引导；可达 → 加载 iframe
+  if(window.localflow && window.localflow.onDshStatus){
+    window.localflow.onDshStatus((up) => {
+      if(up){ clearInstallTimer(); showDshGuide(false); setDshSrc(); }
+      else if(!(_installWrap && !_installWrap.hidden)){ showManualCard(); }
+    });
+  }
+  // 初始状态：先加载一次（主进程会推送 dsh-status）
   if(_df) setDshSrc();
-  const _retry = document.getElementById('dsh-retry');
-  if(_retry) _retry.addEventListener('click', ()=>{ setDshSrc(); showDshGuide(false); });
+  if(_retry) _retry.addEventListener('click', () => { setDshSrc(); showManualCard(); });
   // ── 平移注意 ────────────────
   // Agent 功能 / 工作流 / 固定展示页已移除前端入口，交由 dsh 承担。
   // 保留代码以备回退：恢复入口时取消下列注释即可。

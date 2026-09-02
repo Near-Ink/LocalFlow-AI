@@ -7,4 +7,8 @@ contextBridge.exposeInMainWorld('localflow', {
   getDshBase: () => ipcRenderer.invoke('app:dsh-base'),
   pickDirectory: () => ipcRenderer.invoke('app:pick-directory'),
   onDshStatus: (cb) => ipcRenderer.on('dsh-status', (_e, up) => cb(up)),
+  // 对话引擎（dsh）内置自安装 / 更新进度
+  onDshInstall: (cb) => ipcRenderer.on('dsh-install', (_e, s) => cb(s)),
+  getDshInstallState: () => ipcRenderer.invoke('app:dsh-install-state'),
+  retryDshInstall: () => ipcRenderer.invoke('app:dsh-install-retry'),
 });
