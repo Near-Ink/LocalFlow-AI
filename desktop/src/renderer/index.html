@@ -696,6 +696,35 @@ footer{margin-left:232px;padding:8px 20px;font-size:11px;color:var(--muted);back
 .switch input:checked+.slider{background:var(--accent);}
 .switch input:checked+.slider::before{transform:translateX(18px);}
 
+/* 状态概览 + 云端 + 模型 + 部署目录（设置中心扩展） */
+.set-ov{margin:6px 0 20px;}
+.set-ov-title{font-size:12px;font-weight:700;color:var(--accent);margin-bottom:8px;letter-spacing:.4px;}
+.set-ov-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:10px;}
+.ov-card{border:1px solid var(--rule);border-radius:12px;background:var(--card);padding:12px 14px;box-shadow:var(--shadow);}
+.ov-k{font-size:11px;color:var(--muted);}
+.ov-v{font-size:14px;font-weight:600;color:var(--ink);margin-top:4px;word-break:break-word;}
+.set-ro{display:block;text-align:left;max-width:none;line-height:1.5;}
+.set-badge.key{color:var(--accent);border:1px solid var(--rule);}
+.set-save.ghost{background:transparent;color:var(--accent);border:1px solid var(--rule);}
+.set-save.ghost:hover{background:var(--active);}
+.set-muted{font-size:12px;color:var(--muted);}
+.cb-row{display:flex;align-items:center;gap:16px;padding:14px 16px;border-top:1px solid var(--rule);}
+.cb-row:first-child{border-top:none;}
+.cb-info{flex:1;min-width:0;}
+.cb-name{font-size:13px;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:8px;}
+.cb-sub{font-size:11px;color:var(--muted);margin-top:3px;line-height:1.5;word-break:break-word;}
+.cb-act{display:flex;gap:8px;flex-shrink:0;}
+.cb-tag{font-size:10px;font-weight:600;border-radius:4px;padding:1px 6px;color:var(--muted);border:1px solid var(--rule);}
+.cb-tag.on{color:var(--green);border-color:rgba(22,163,74,.3);}
+.cb-switch{background:var(--bg);}
+.cloud-add{border:1px solid var(--rule);border-radius:12px;background:var(--card);margin-top:10px;box-shadow:var(--shadow);}
+.cloud-add>summary{cursor:pointer;padding:12px 16px;font-size:13px;font-weight:600;color:var(--ink);}
+.cloud-form{padding:4px 16px 16px;display:flex;flex-direction:column;gap:10px;}
+.cloud-form label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);}
+.cloud-form input{border:1px solid var(--rule);border-radius:8px;padding:7px 10px;font-size:12px;color:var(--ink);background:var(--bg);outline:none;}
+.cloud-form input:focus{border-color:var(--accent);}
+.cb-msg{font-size:12px;min-height:16px;}
+
 /* ===== 工作流画布 ===== */
 .wf-wrap{display:flex;flex-direction:column;height:100%;min-height:0;}
 .wf-head{display:flex;align-items:center;gap:10px;padding:14px 18px 10px;flex-shrink:0;}
@@ -2789,6 +2818,15 @@ function initViews(){
   if(sback) sback.addEventListener('click', ()=>switchView('chat'));
   const sref = document.getElementById('set-refresh');
   if(sref) sref.addEventListener('click', ()=>loadSettings());
+  // 设置面板：事件委托（innerHTML 重渲染后仍有效）
+  const setBody = document.getElementById('set-body');
+  if(setBody && !setBody._deleg){
+    setBody._deleg = true;
+    setBody.addEventListener('click', onSetBodyClick);
+    setBody.addEventListener('change', onSetBodyChange);
+    setBody.addEventListener('keydown', onSetBodyKey);
+    setBody.addEventListener('submit', e=>e.preventDefault());
+  }
   // 部署页：返回 / 打开向导 / 绑定云端
   const depb = document.getElementById('dep-back');
   if(depb) depb.addEventListener('click', ()=>switchView('chat'));
@@ -2970,14 +3008,41 @@ function fmtSettingVal(v){
 }
 
 function settingRowHTML(s){
-  const badge = s.writable
-    ? '<span class="set-badge w">可改</span>'
-    : '<span class="set-badge ro">只读</span>';
-  const ctl = s.writable
-    ? (s.type==='bool'
-        ? `<div class="set-ctl bool-only"><label class="switch" title="点击切换 ${esc(s.name)}"><input type="checkbox" data-key="${s.key}" ${s.value?'checked':''}><span class="slider"></span></label><span class="set-val">${esc(fmtSettingVal(s.value))}</span></div>`
-        : `<div class="set-ctl"><input class="set-input" type="text" data-key="${s.key}" value="${esc(fmtSettingVal(s.value))}" placeholder="输入新值"><button class="set-save" data-key="${s.key}">保存</button></div>`)
-    : `<div class="set-ctl"><span class="set-val">${esc(fmtSettingVal(s.value))}</span></div>`;
+  const badge = s.secret
+    ? '<span class="set-badge key">密钥</span>'
+    : (s.writable ? '<span class="set-badge w">可改</span>' : '<span class="set-badge ro">只读</span>');
+
+  // 密钥类：不直接回显，交给「对外 API」页管理
+  if(s.secret){
+    const set = !!(s.value && s.value.set);
+    return `<div class="set-row" data-key="${s.key}">
+      <div class="set-info">
+        <div class="set-name">${esc(s.name)} ${badge}</div>
+        <div class="set-desc">${esc(s.desc||'')}</div>
+      </div>
+      <div class="set-ctl">
+        <span class="set-val">${set?'已设置密钥':'未设置'}</span>
+        <button class="set-save" data-act="open-api">在「对外 API」页管理</button>
+      </div>
+    </div>`;
+  }
+
+  let ctl;
+  if(!s.writable){
+    ctl = `<div class="set-ctl"><span class="set-val set-ro">${prettyReadonly(s.value)}</span></div>`;
+  } else if(s.type==='bool'){
+    ctl = `<div class="set-ctl bool-only"><label class="switch" title="点击切换 ${esc(s.name)}"><input type="checkbox" data-key="${s.key}" ${s.value?'checked':''}><span class="slider"></span></label><span class="set-val">${esc(fmtSettingVal(s.value))}</span></div>`;
+  } else if(s.type==='select'){
+    const opts = (s.options||[]).map(o=>`<option value="${esc(o)}" ${String(o)===String(s.value)?'selected':''}>${esc(o)}</option>`).join('');
+    ctl = `<div class="set-ctl"><select class="set-input" data-key="${s.key}">${opts}</select><button class="set-save" data-act="save-select" data-key="${s.key}">保存</button></div>`;
+  } else if(s.type==='int' || s.type==='float'){
+    ctl = `<div class="set-ctl"><input class="set-input" type="number" data-key="${s.key}" value="${esc(String(s.value===undefined||s.value===null?'':s.value))}" placeholder="输入数值"><button class="set-save" data-act="save-text" data-key="${s.key}">保存</button></div>`;
+  } else {
+    const list = (s.key==='default_model' && window.__lfModels && window.__lfModels.length) ? ' list="lf-model-list"' : '';
+    const pick = (s.key==='install_dir') ? `<button class="set-save ghost" data-act="install-pick" data-key="${s.key}">选择文件夹</button>` : '';
+    ctl = `<div class="set-ctl"><input class="set-input" type="text" data-key="${s.key}"${list} value="${esc(fmtSettingVal(s.value))}" placeholder="输入新值">${pick}<button class="set-save" data-act="save-text" data-key="${s.key}">保存</button></div>`;
+  }
+
   return `<div class="set-row" data-key="${s.key}">
     <div class="set-info">
       <div class="set-name">${esc(s.name)} ${badge}</div>
@@ -2987,53 +3052,170 @@ function settingRowHTML(s){
   </div>`;
 }
 
-function renderSettings(d){
+// 只读结构化值（对象/数组）友好展示
+function prettyReadonly(v){
+  if(v===null||v===undefined) return '—';
+  if(typeof v!=='object') return esc(String(v));
+  try{
+    if(Array.isArray(v)){
+      if(!v.length) return '（空）';
+      return v.map(it=> typeof it==='object' ? esc(JSON.stringify(it)) : esc(String(it))).join('、');
+    }
+    return Object.entries(v).map(([k,val])=>`<span class="ro-k">${esc(k)}</span>: <span class="ro-v">${esc(typeof val==='object'?JSON.stringify(val):String(val))}</span>`).join('，');
+  }catch(_){ return esc(JSON.stringify(v)); }
+}
+
+function buildOverview(d, cloud){
+  const ver = (d&&d.version) || (settingsData&&settingsData.version) || '—';
+  const eng = (d&&d.settings) ? (d.settings.find(s=>s.key==='engine')||{}).value : null;
+  const engTxt = eng ? (eng.type==='cloud' ? '云端 · '+(eng.provider||eng.model||'') : '本地 · '+(eng.model||'')) : '—';
+  const cache = (d&&d.settings) ? (d.settings.find(s=>s.key==='enable_cache')||{}).value : null;
+  const agent = (d&&d.settings) ? (d.settings.find(s=>s.key==='enable_agent')||{}).value : null;
+  const cs = cloud || {};
+  const cloudTxt = cs.bound ? `已绑定 ${cs.count||0} 个（当前${cs.active==='cloud'?'云端':'本地'}）` : '未绑定';
+  const cards = [
+    ['版本', ver], ['引擎', engTxt], ['云端', cloudTxt],
+    ['会话缓存', cache?'开启':'关闭'], ['Agent', agent?'开启':'关闭'],
+  ];
+  return `<div class="set-ov"><div class="set-ov-title">状态概览</div><div class="set-ov-grid">${cards.map(c=>`<div class="ov-card"><div class="ov-k">${esc(c[0])}</div><div class="ov-v">${esc(c[1])}</div></div>`).join('')}</div></div>`;
+}
+
+function buildCloudSection(cloud){
+  cloud = cloud || {bindings:[], count:0, active:'local', active_id:''};
+  const bs = cloud.bindings||[];
+  const rows = bs.length ? bs.map(b=>{
+    const active = (b.id===cloud.active_id);
+    return `<div class="cb-row">
+      <div class="cb-info">
+        <div class="cb-name">${esc(b.provider||b.base_url||'—')} ${active?'<span class="cb-tag on">激活中</span>':'<span class="cb-tag">未激活</span>'}</div>
+        <div class="cb-sub">${esc(b.base_url||'')} · 模型 ${esc(b.model||'—')}${b.context_size?(' · 上下文 '+b.context_size):''}</div>
+      </div>
+      <div class="cb-act">
+        ${active?'':`<button class="set-save" data-act="cloud-activate" data-id="${esc(b.id)}">激活</button>`}
+        <button class="set-save ghost" data-act="cloud-unbind" data-id="${esc(b.id)}">解绑</button>
+      </div>
+    </div>`;
+  }).join('') : '<div class="set-empty" style="padding:18px 0">尚未绑定任何云端 API。可在下方绑定 DeepSeek / OpenAI 兼容服务。</div>';
+
+  let switchCtl;
+  if(cloud.active==='cloud'){
+    switchCtl = `<button class="set-save ghost" data-act="cloud-switch" data-target="local">切回本地引擎</button>`;
+  } else {
+    switchCtl = bs.length ? `<button class="set-save ghost" data-act="cloud-switch" data-target="cloud">切到云端引擎</button>` : `<span class="set-muted">无云端绑定</span>`;
+  }
+
+  return `<div class="set-group">
+    <div class="g-title">云端 API 绑定</div>
+    <div class="set-card">
+      ${rows}
+      <div class="cb-row cb-switch"><div class="cb-info"><div class="cb-name">当前引擎</div><div class="cb-sub">${esc(cloud.active==='cloud'?'云端':(bs.length?'本地':'本地（无绑定）'))}</div></div><div class="cb-act">${switchCtl}</div></div>
+    </div>
+    <details class="cloud-add">
+      <summary>＋ 绑定新云端 API</summary>
+      <div class="cloud-form">
+        <label>服务地址（base_url）<input id="cb-url" placeholder="https://api.deepseek.com/v1" autocomplete="off"/></label>
+        <label>API Key<input id="cb-key" type="password" placeholder="sk-..." autocomplete="off"/></label>
+        <label>供应商（可选）<input id="cb-provider" placeholder="deepseek / openai" autocomplete="off"/></label>
+        <label>模型<input id="cb-model" list="cb-model-list" placeholder="deepseek-chat" autocomplete="off"/><datalist id="cb-model-list"></datalist><button type="button" class="set-save ghost" data-act="cloud-fetch-models">拉取真实模型</button></label>
+        <label>上下文大小（可选）<input id="cb-ctx" type="number" placeholder="0=默认" autocomplete="off"/></label>
+        <div style="display:flex;gap:8px;margin-top:4px">
+          <button class="set-save" data-act="cloud-bind" data-activate="1">绑定并激活</button>
+          <button class="set-save ghost" data-act="cloud-bind" data-activate="0">仅保存</button>
+        </div>
+        <div class="cb-msg" id="cb-msg"></div>
+      </div>
+    </details>
+  </div>`;
+}
+
+function buildModelsSection(models){
+  let rows;
+  if(models && models.ok===false){ rows = `<div class="set-empty" style="padding:18px 0">模型列表不可用：${esc(models.error||'')}</div>`; }
+  else {
+    const list = (models||[]);
+    rows = list.length ? list.map(m=>`<div class="cb-row"><div class="cb-info"><div class="cb-name">${esc(m.id)} ${m.vision?'<span class="cb-tag on">视觉</span>':''}</div><div class="cb-sub">${esc(m.backend||'')}${m.size?(' · '+(m.size/1e9).toFixed(1)+'GB'):''}</div></div></div>`).join('')
+      : '<div class="set-empty" style="padding:18px 0">本地暂无模型。可在部署向导中拉取。</div>';
+  }
+  return `<div class="set-group"><div class="g-title">本地模型（${Array.isArray(models)?models.length:0}）</div><div class="set-card">${rows}</div></div>`;
+}
+
+function renderSettings(d, cloud, models){
   const body = document.getElementById('set-body');
   const sub = document.getElementById('set-sub');
   if(!body) return;
-  if(d.error){
+  window.__lfModels = (models && models.ok!==false) ? models : null;
+  if(d && d.error){
     if(sub) sub.textContent = '';
     body.innerHTML = `<div class="set-empty">⚠ 无法读取设置：${esc(d.error)}<br>请确认后端（8765）已运行。</div>`;
     return;
   }
-  if(sub) sub.textContent = `版本 v${esc(d.version||'')} · 修改会持久化（config.json）并在重启后生效，也可让 Agent 调节`;
+  if(sub) sub.textContent = `版本 v${esc((d&&d.version)||'')} · 修改会持久化（config.json）并在重启后生效，也可让 Agent 调节`;
+
+  // 1) 状态概览
+  const ov = buildOverview(d, cloud);
+  // 2) 注册设置（分组）
   const groups = {};
   (d.settings||[]).forEach(s=>{ (groups[s.group] = groups[s.group]||[]).push(s); });
-  const names = Object.keys(groups);
-  body.innerHTML = names.length
-    ? names.map(grp=>`
-      <div class="set-group">
-        <div class="g-title">${esc(grp)}</div>
-        <div class="set-card">${groups[grp].map(settingRowHTML).join('')}</div>
-      </div>`).join('')
-    : `<div class="set-empty">暂无设置项</div>`;
+  const regHTML = Object.keys(groups).map(grp=>`
+    <div class="set-group">
+      <div class="g-title">${esc(grp)}</div>
+      <div class="set-card">${groups[grp].map(settingRowHTML).join('')}</div>
+    </div>`).join('');
+  // 3) 模型候选列表（供默认模型输入联想）
+  const modelListHTML = (window.__lfModels && window.__lfModels.length)
+    ? `<datalist id="lf-model-list">${window.__lfModels.map(m=>`<option value="${esc(m.id)}">`).join('')}</datalist>` : '';
+  // 4) 云端绑定管理
+  const cloudHTML = buildCloudSection(cloud);
+  // 5) 本地模型概览
+  const modelsHTML = buildModelsSection(models);
 
-  // 事件绑定
-  body.querySelectorAll('.switch input').forEach(inp=>{
-    inp.addEventListener('change', ()=> saveSetting(inp.dataset.key, inp.checked, inp));
-  });
-  body.querySelectorAll('.set-save').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      const row = btn.closest('.set-row');
-      const inp = row ? row.querySelector('.set-input') : null;
-      saveSetting(btn.dataset.key, inp? inp.value : '', btn);
-    });
-  });
-  body.querySelectorAll('.set-input').forEach(inp=>{
-    inp.addEventListener('keydown', ev=>{
-      if(ev.key==='Enter'){
-        ev.preventDefault();
-        const row = inp.closest('.set-row');
-        const btn = row ? row.querySelector('.set-save') : null;
-        if(btn) btn.click();
-      }
-    });
-  });
+  body.innerHTML = ov + regHTML + modelListHTML + cloudHTML + modelsHTML;
+}
+
+// ---- 设置面板事件委托（一次绑定，innerHTML 重渲染后依旧有效）----
+function onSetBodyChange(e){
+  const inp = e.target.closest('input[data-key]');
+  if(inp && inp.type==='checkbox'){ saveSetting(inp.dataset.key, inp.checked, inp); }
+}
+function onSetBodyKey(e){
+  if(e.key!=='Enter') return;
+  const inp = e.target.closest('input[data-key]');
+  if(!inp || inp.type==='checkbox') return;
+  const ctl = inp.closest('.set-ctl');
+  const btn = ctl ? ctl.querySelector('.set-save[data-act="save-text"],.set-save[data-act="save-select"]') : null;
+  if(btn) btn.click();
+}
+function onSetBodyClick(e){
+  const actEl = e.target.closest('[data-act]');
+  if(!actEl) return;
+  const act = actEl.dataset.act, key = actEl.dataset.key;
+  if(act==='open-api'){ switchView('api'); return; }
+  if(act==='save-text' || act==='save-select'){
+    const row = actEl.closest('.set-row');
+    const inp = row ? row.querySelector('input[data-key],select[data-key]') : null;
+    if(inp) saveSetting(key, inp.value, actEl);
+    return;
+  }
+  if(act==='install-pick'){ pickInstallDirFor(key); return; }
+  if(act==='cloud-activate'){ cloudActivate(actEl.dataset.id); return; }
+  if(act==='cloud-unbind'){ cloudUnbind(actEl.dataset.id); return; }
+  if(act==='cloud-switch'){ cloudSwitch(actEl.dataset.target); return; }
+  if(act==='cloud-fetch-models'){ cloudFetchModels(); return; }
+  if(act==='cloud-bind'){ cloudBind(actEl.dataset.activate==='1'); return; }
+}
+
+async function fetchCloud(){
+  try{ const r = await fetch(API+'/api/cloud/status'); if(!r.ok) throw new Error('HTTP '+r.status); return await r.json(); }
+  catch(e){ return {error:String(e), bindings:[], active:'local', active_id:''}; }
+}
+async function fetchModels(){
+  try{ const r = await fetch(API+'/api/models'); if(!r.ok) throw new Error('HTTP '+r.status); return await r.json(); }
+  catch(e){ return {ok:false, error:String(e)}; }
 }
 
 async function saveSetting(key, value, el){
   const fresh = settingsData && settingsData.settings && settingsData.settings.find(s=>s.key===key);
-  if(!fresh || !fresh.writable){ setMsg('该项为只读，不能修改', 'err'); loadSettings(); return; }
+  if(!fresh || !fresh.writable){ setMsg('该项为只读，不能修改', 'err'); return; }
   if(el) el.disabled = true;
   setMsg('保存中…', 'wait');
   let res;
@@ -3048,10 +3230,84 @@ async function saveSetting(key, value, el){
   if(res && res.ok){ setMsg('✓ '+(res.message||'已保存'), 'ok'); loadSettings(); }
   else setMsg('✗ '+(res.detail||res.message||'保存失败'), 'err');
 }
+
+async function cloudActivate(id){
+  setMsg('激活中…', 'wait');
+  try{
+    const r = await fetch(API+'/api/cloud/switch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({target:id})});
+    const d = await r.json().catch(()=>({}));
+    if(d && d.ok){ setMsg('✓ 已激活云端绑定', 'ok'); loadSettings(); } else setMsg('✗ '+(d.error||'激活失败'), 'err');
+  }catch(e){ setMsg('请求失败：'+e, 'err'); }
+}
+async function cloudUnbind(id){
+  if(!confirm('确定解绑该云端 API？')) return;
+  setMsg('解绑中…', 'wait');
+  try{
+    const r = await fetch(API+'/api/cloud/unbind',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({binding_id:id})});
+    const d = await r.json().catch(()=>({}));
+    if(d && d.ok){ setMsg('✓ 已解绑', 'ok'); loadSettings(); } else setMsg('✗ '+(d.error||'解绑失败'), 'err');
+  }catch(e){ setMsg('请求失败：'+e, 'err'); }
+}
+async function cloudSwitch(target){
+  setMsg('切换引擎中…', 'wait');
+  try{
+    const r = await fetch(API+'/api/cloud/switch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({target})});
+    const d = await r.json().catch(()=>({}));
+    if(d && d.ok){ setMsg('✓ 已切换', 'ok'); loadSettings(); } else setMsg('✗ '+(d.error||'切换失败'), 'err');
+  }catch(e){ setMsg('请求失败：'+e, 'err'); }
+}
+async function cloudBind(activate){
+  const msg = document.getElementById('cb-msg');
+  const url=document.getElementById('cb-url'), key=document.getElementById('cb-key'),
+        prov=document.getElementById('cb-provider'), model=document.getElementById('cb-model'),
+        ctx=document.getElementById('cb-ctx');
+  if(!url||!key||!model) return;
+  const u=url.value.trim(), k=key.value.trim(), m=model.value.trim();
+  if(!(u&&k&&m)){ if(msg){ msg.textContent='base_url / API Key / 模型 均必填'; msg.style.color='#dc2626'; } return; }
+  if(msg){ msg.textContent='绑定中…'; msg.style.color=''; }
+  try{
+    const r = await fetch(API+'/api/cloud/bind',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({base_url:u,api_key:k,model:m,activate:!!activate,provider:prov?prov.value.trim():'',context_size:parseInt((ctx?ctx.value.trim():'0')||'0',10)||0})});
+    const d = await r.json().catch(()=>({}));
+    if(d && d.ok){ setMsg('✓ '+(d.note||'已绑定'), 'ok'); loadSettings(); }
+    else if(msg){ msg.textContent=d.error||'绑定失败'; msg.style.color='#dc2626'; }
+  }catch(e){ if(msg){ msg.textContent='请求失败：'+e.message; msg.style.color='#dc2626'; } }
+}
+async function cloudFetchModels(){
+  const msg = document.getElementById('cb-msg');
+  const url=document.getElementById('cb-url'), key=document.getElementById('cb-key'),
+        model=document.getElementById('cb-model'), list=document.getElementById('cb-model-list');
+  if(!url||!key) return;
+  const u=url.value.trim(), k=key.value.trim();
+  if(!(u&&k)){ if(msg){ msg.textContent='请先填写服务地址与 API Key'; msg.style.color='#dc2626'; } return; }
+  if(msg){ msg.textContent='拉取模型中…'; msg.style.color=''; }
+  try{
+    const r = await fetch(API+'/api/cloud/list-models',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({base_url:u,api_key:k,model:''})});
+    const d = await r.json().catch(()=>({}));
+    if(d && d.ok){
+      if(list){ list.innerHTML=(d.models||[]).map(x=>`<option value="${esc(x)}">`).join(''); }
+      if(model && (d.models||[]).length) model.value=d.models[0];
+      if(msg){ msg.textContent='✓ 已拉取 '+(d.count||0)+' 个可用模型'; msg.style.color='#16a34a'; }
+    } else if(msg){ msg.textContent=(d.error||'拉取失败'); msg.style.color='#dc2626'; }
+  }catch(e){ if(msg){ msg.textContent='请求失败：'+e.message; msg.style.color='#dc2626'; } }
+}
+async function pickInstallDirFor(key){
+  const inp = document.querySelector('#set-body input[data-key="'+key+'"]');
+  if(!inp) return;
+  if(window.localflow && typeof window.localflow.pickDirectory==='function'){
+    try{ const dir = await window.localflow.pickDirectory(); if(dir) inp.value=dir; }
+    catch(e){ setMsg('选择失败：'+e, 'err'); }
+  } else {
+    setMsg('当前环境不支持文件夹选择，请手动输入路径', 'err');
+  }
+}
+
 async function loadSettings(){
-  const d = await fetchSettings();
+  setMsg('加载中…', 'wait');
+  const [d, cloud, models] = await Promise.all([fetchSettings(), fetchCloud(), fetchModels()]);
   settingsData = d;
-  renderSettings(d);
+  renderSettings(d, cloud, models);
+  if(d && d.error){ setMsg('⚠ 无法读取设置：'+d.error, 'err'); }
+  else { const m = document.getElementById('set-msg'); if(m) m.classList.remove('show'); }
 }
 
 /* ================= 工作流画布 ================= */

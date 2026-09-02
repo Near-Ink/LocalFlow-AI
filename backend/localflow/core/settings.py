@@ -25,6 +25,7 @@ class Setting:
     type: str = "string"                 # string / int / float / bool / select
     options: Optional[list] = None       # type=select 时的合法取值
     persist: bool = False                # 修改后是否落盘持久化
+    secret: bool = False                 # True 表示敏感字段（如 API Key），前端不回显原文
     getter: Optional[Callable] = None    # (app) -> Any；缺省则 value=None
     setter: Optional[Callable] = None    # (app, value) -> (ok: bool, msg: str)
 
@@ -53,6 +54,7 @@ class SettingsRegistry:
         return {
             "key": s.key, "group": s.group, "name": s.name, "desc": s.desc,
             "type": s.type, "options": s.options, "persist": s.persist,
+            "secret": s.secret,
             "writable": s.setter is not None, "value": val,
         }
 
@@ -173,6 +175,16 @@ def _set_identity_inject(app, value) -> tuple:
     return True, f"模型身份注入已{'开启' if v else '关闭'}"
 
 
+def _reg_install_dir(app) -> Optional[dict]:
+    return app.config.install_dir or ""
+
+
+def _set_install_dir(app, value) -> tuple:
+    v = str(value or "").strip()
+    r = app.update_install_dir(v)
+    return True, (r.get("note") or "部署目录已更新（重启生效）")
+
+
 def register_core_settings(app) -> SettingsRegistry:
     reg = SettingsRegistry(app)
     reg.register(Setting(
@@ -193,7 +205,7 @@ def register_core_settings(app) -> SettingsRegistry:
     reg.register(Setting(
         key="openai_api_key", group="运行/安全", name="对外 AI 密钥",
         desc="其他应用调用本机 AI 时需要携带的 Bearer Key；留空则本机免鉴权",
-        type="string", persist=True, getter=_reg_api_key, setter=_set_api_key,
+        type="string", persist=True, secret=True, getter=_reg_api_key, setter=_set_api_key,
     ))
     reg.register(Setting(
         key="openai_identity_inject", group="运行/安全", name="模型身份注入",
@@ -213,5 +225,10 @@ def register_core_settings(app) -> SettingsRegistry:
     reg.register(Setting(
         key="version", group="运行/安全", name="应用版本",
         desc="LocalFlow AI 版本号（只读）", type="string", getter=_reg_version,
+    ))
+    reg.register(Setting(
+        key="install_dir", group="安装/数据", name="部署目录",
+        desc="模型与数据保存目录；留空使用默认 ~/.localflow。修改后需重启 LocalFlow 生效。",
+        type="string", persist=False, getter=_reg_install_dir, setter=_set_install_dir,
     ))
     return reg

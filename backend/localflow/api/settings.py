@@ -24,6 +24,12 @@ async def settings(app=Depends(get_app)):
     return {"version": app.version, "settings": app.settings.all()}
 
 
+# 注意：必须声明在 `/{key}` 之前，否则会被泛化路由抢先匹配
+@router.put("/install-dir")
+async def update_install_dir(req: InstallDirReq, app=Depends(get_app)):
+    return app.update_install_dir(req.install_dir)
+
+
 @router.get("/{key}")
 async def get_one(key: str, app=Depends(get_app)):
     item = app.settings.get(key)
@@ -40,8 +46,3 @@ async def set_one(key: str, req: SetSettingReq, app=Depends(get_app)):
     if not ok:
         raise HTTPException(status_code=400, detail=msg)
     return {"ok": True, "key": key, "message": msg, "value": app.settings.get(key)["value"]}
-
-
-@router.put("/install-dir")
-async def update_install_dir(req: InstallDirReq, app=Depends(get_app)):
-    return app.update_install_dir(req.install_dir)
