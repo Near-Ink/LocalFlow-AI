@@ -898,14 +898,14 @@ footer{margin-left:232px;padding:8px 20px;font-size:11px;color:var(--muted);back
           <p id="dsh-install-msg" data-page-node-id="RHxl76n3BZoKX3h8ClTKMk"></p>
           <div class="dsh-progress" data-page-node-id="51H0e0Nc9s9m6J54eUHDxY"><div class="dsh-progress-fill" id="dsh-progress-fill" data-page-node-id="A0BWPtBvzSiOLc0NVGCJjA"></div></div>
           <div class="dsh-progress-pct" id="dsh-progress-pct" data-page-node-id="sDiMNKPBS5p9hgX9NttFPX">0%</div>
-          <p class="dsh-guide-tip" data-page-node-id="Z2GAvxF4ePqe3rEhxLtolh">首次使用会解包内置的 DeepSeek Harness 与便携 Node 运行时，请稍候；更新时会自动覆盖到最新版本。</p>
+          <p class="dsh-guide-tip" data-page-node-id="Z2GAvxF4ePqe3rEhxLtolh" data-i18n="dsh.installTip">首次使用会解包内置的 DeepSeek Harness 与便携 Node 运行时，请稍候；更新时会自动覆盖到最新版本。</p>
           <p class="dsh-guide-error" id="dsh-install-error" hidden data-page-node-id="ctIIPOuBsBF1cnfV4rJzbl"></p>
-          <button id="dsh-install-retry" class="btn-primary" hidden data-page-node-id="sjXRRJmmxRwLt9gR5mSdzC">重试安装</button>
+          <button id="dsh-install-retry" class="btn-primary" hidden data-page-node-id="sjXRRJmmxRwLt9gR5mSdzC" data-i18n="dsh.retryInstall">重试安装</button>
         </div>
         <!-- 手动引导（不可达 / 安装失败兜底） -->
         <div id="dsh-manual-wrap" data-page-node-id="r8KBCR5jrJqmB093YTumu3">
           <div class="dsh-guide-logo" data-page-node-id="QiVa9hW5j99fCbMedHYYDg">L</div>
-          <h2 data-page-node-id="tBu8emO64ryF4HZS4JPp26">对话引擎未连接</h2>
+          <h2 data-page-node-id="tBu8emO64ryF4HZS4JPp26" data-i18n="dsh.connectTitle">对话引擎未连接</h2>
           <!-- 启动诊断（dsh 崩溃时显示真实报错，便于排查/反馈） -->
           <p class="dsh-guide-error" id="dsh-launch-error" hidden data-page-node-id="sRFfEC9Awe5XFSPRIhAZH4"></p>
           <pre id="dsh-launch-cmd" class="dsh-launch-cmd" hidden data-page-node-id="DBy1BTVOAXHQKlqoZMJa5Z"></pre>
@@ -921,8 +921,8 @@ footer{margin-left:232px;padding:8px 20px;font-size:11px;color:var(--muted);back
             </li>
             <li data-page-node-id="nNpAJ599EKeiDsRFUYbQ4P">确认 dsh 已监听 <code data-page-node-id="pqWvNV4kxZkBGV97TOF4d2">8080</code> 后，点击下方「重新连接」。</li>
           </ol>
-          <button id="dsh-retry" class="btn-primary" data-page-node-id="OJuXAMpjJTtbTw4vgoACD6">重新连接</button>
-          <p class="dsh-guide-tip" data-page-node-id="09sMAT1upSIzDd8liBZHQ2">未安装 dsh 也可使用「部署模型 / 硬件监控 / 对外 API / 设置」等本地功能。</p>
+          <button id="dsh-retry" class="btn-primary" data-page-node-id="OJuXAMpjJTtbTw4vgoACD6" data-i18n="dsh.retry">重新连接</button>
+          <p class="dsh-guide-tip" data-page-node-id="09sMAT1upSIzDd8liBZHQ2" data-i18n="dsh.localOnly">未安装 dsh 也可使用「部署模型 / 硬件监控 / 对外 API / 设置」等本地功能。</p>
         </div>
       </div>
     </div>
@@ -1002,7 +1002,7 @@ footer{margin-left:232px;padding:8px 20px;font-size:11px;color:var(--muted);back
 
         <div class="dep-card dep-actions" data-page-node-id="01sbyrSQSxlWMBrEUBoMg0">
           <div class="dep-card-title" data-page-node-id="S1EqxMwQfCapZaX4BZNR0R" data-i18n="dep.start">🚀 开始部署</div>
-          <p class="dep-tip" data-page-node-id="lr0CAFtS03esbzk0qSKR7k">打开部署向导，按推荐选择模型并一键后台拉取，下载完成后即可在「对话」页（DeepSeek Harness）中选用该模型。</p>
+          <p class="dep-tip" data-page-node-id="lr0CAFtS03esbzk0qSKR7k" data-i18n="dep.startTip">打开部署向导，按推荐选择模型并一键后台拉取，下载完成后即可在「对话」页（DeepSeek Harness）中选用该模型。</p>
           <button class="dep-big-btn" id="dep-open-wizard" data-page-node-id="0mKKCHVQHxqsCu1dSMockm" data-i18n="dep.openWizard">⬇ 打开部署向导</button>
           <button class="dep-mid-btn" id="dep-open-cloud" data-page-node-id="bI8KeCFUCXZyodSVZC9WSA" data-i18n="dep.openCloud">☁ 绑定云端 API（下载期间也能先聊）</button>
           <div class="dep-note" data-page-node-id="A3Stbqbdi2jy2mynrxm6nD">已装模型会同步出现在 dsh 模型选择器的「LocalFlow (本机)」分组中；如需自动同步可运行 <code data-page-node-id="iIiP6u1et335z9w9XpJD5o">dsh-poc/sync-localflow-models.mjs --watch</code>。</div>
@@ -1124,7 +1124,14 @@ footer{margin-left:232px;padding:8px 20px;font-size:11px;color:var(--muted);back
     'side.history': {zh:'历史会话', en:'History', ja:'履歴', ko:'기록', fr:'Historique', de:'Verlauf', es:'Historial', ru:'История'},
     'side.search':  {zh:'🔍 搜索会话…', en:'🔍 Search chats…', ja:'🔍 チャットを検索…', ko:'🔍 대화 검색…', fr:'🔍 Rechercher…', de:'🔍 Suchen…', es:'🔍 Buscar…', ru:'🔍 Поиск…'},
     'empty.title':  {zh:'开始对话', en:'Start Chat', ja:'チャットを開始', ko:'대화 시작', fr:'Démarrer', de:'Start', es:'Iniciar', ru:'Начать чат'},
-    'empty.desc':   {zh:'LocalFlow AI 将优先调用本地推理，智能拆分子任务，云端协作攻坚复杂问题。', en:'LocalFlow AI prefers local inference, splits subtasks intelligently, and teams up with the cloud for hard problems.'},
+    'empty.desc':   {zh:'LocalFlow AI 将优先调用本地推理，智能拆分子任务，云端协作攻坚复杂问题。',
+                     en:'LocalFlow AI prefers local inference, splits subtasks intelligently, and teams up with the cloud for tough problems.',
+                     ja:'LocalFlow AI はローカル推論を優先し、サブタスクを分割し、クラウドと連携して複雑な問題に取り組みます。',
+                     ko:'LocalFlow AI는 로컬 추론을 우선하고 하위 작업을 분할하며, 복잡한 문제는 클라우드와 협업합니다.',
+                     fr:'LocalFlow AI privilégie l\'inférence locale, découpe les sous-tâches et collabore avec le cloud pour les problèmes complexes.',
+                     de:'LocalFlow AI bevorzugt lokale Inferenz, teilt Aufgaben auf und arbeitet für komplexe Probleme mit der Cloud zusammen.',
+                     es:'LocalFlow AI prioriza la inferencia local, divide subtareas y colabora con la nube en problemas complejos.',
+                     ru:'LocalFlow AI отдаёт приоритет локальному выводу, разбивает задачи и взаимодействует с облаком для сложных проблем.'},
     'empty.local':  {zh:'🚀 本地优先', en:'🚀 Local First', ja:'🚀 ローカル優先', ko:'🚀 로컬 우선', fr:'🚀 Local d\'abord', de:'🚀 Lokal zuerst', es:'🚀 Local primero', ru:'🚀 Локальный приоритет'},
     'empty.multi':  {zh:'🧠 多模型协同', en:'🧠 Multi-Model', ja:'🧠 マルチモデル', ko:'🧠 멀티모델', fr:'🧠 Multi-modèle', de:'🧠 Multi-Modell', es:'🧠 Multi-modelo', ru:'🧠 Мультимодель'},
     'empty.cache':  {zh:'⚡ 高命中缓存', en:'⚡ Smart Cache', ja:'⚡ スマートキャッシュ', ko:'⚡ 스마트 캐시', fr:'⚡ Cache intelligent', de:'⚡ Intelligenter Cache', es:'⚡ Caché inteligente', ru:'⚡ Умный кэш'},
@@ -1144,7 +1151,14 @@ footer{margin-left:232px;padding:8px 20px;font-size:11px;color:var(--muted);back
     'input.send':   {zh:'发送', en:'Send', ja:'送信', ko:'보내기', fr:'Envoyer', de:'Senden', es:'Enviar', ru:'Отправить'},
     'back.title':   {zh:'返回对话', en:'Back to chat', ja:'チャットに戻る', ko:'대화로 돌아가기', fr:'Retour au chat', de:'Zurück zum Chat', es:'Volver al chat', ru:'Назад к чату'},
     'dep.title':    {zh:'部署本地模型', en:'Deploy Local Model', ja:'ローカルモデルのデプロイ', ko:'로컬 모델 배포', fr:'Déployer un modèle local', de:'Lokales Modell bereitstellen', es:'Desplegar modelo local', ru:'Развернуть локальную модель'},
-    'dep.sub':      {zh:'检测设备 → 选择模型 → 一键下载，即可在本机运行大模型', en:'Detect device → pick a model → one-click download to run LLMs on this machine'},
+    'dep.sub':      {zh:'检测设备 → 选择模型 → 一键下载，即可在本机运行大模型',
+                     en:'Detect device → pick a model → one-click download to run LLMs on this machine',
+                     ja:'デバイス検出 → モデル選択 → ワンクリックダウンロードで、このマシンで LLM を実行',
+                     ko:'장치 감지 → 모델 선택 → 원클릭 다운로드로 이 머신에서 LLM 실행',
+                     fr:'Détecter l\'appareil → choisir un modèle → téléchargement en un clic pour exécuter des LLM localement',
+                     de:'Gerät erkennen → Modell wählen → Ein-Klick-Download, um LLMs auf diesem Rechner auszuführen',
+                     es:'Detectar dispositivo → elegir modelo → descarga con un clic para ejecutar LLM en tu equipo',
+                     ru:'Обнаружение устройства → выбор модели → загрузка в один клик для запуска LLM на этом компьютере'},
     'dep.env':      {zh:'🖥 设备与运行环境', en:'🖥 Device & Runtime', ja:'🖥 デバイスと実行環境', ko:'🖥 장치 및 실행 환경', fr:'🖥 Appareil et environnement', de:'🖥 Gerät & Laufzeit', es:'🖥 Dispositivo y entorno', ru:'🖥 Устройство и среда'},
     'dep.env.platform': {zh:'平台', en:'Platform', ja:'プラットフォーム', ko:'플랫폼', fr:'Plateforme', de:'Plattform', es:'Plataforma', ru:'Платформа'},
     'dep.env.cpumem':   {zh:'CPU / 内存', en:'CPU / Memory', ja:'CPU / メモリ', ko:'CPU / 메모리', fr:'CPU / Mémoire', de:'CPU / Speicher', es:'CPU / Memoria', ru:'CPU / Память'},
@@ -1156,7 +1170,14 @@ footer{margin-left:232px;padding:8px 20px;font-size:11px;color:var(--muted);back
     'dep.openWizard':  {zh:'⬇ 打开部署向导', en:'⬇ Open Deploy Wizard', ja:'⬇ デプロイウィザードを開く', ko:'⬇ 배포 마법사 열기', fr:'⬇ Ouvrir l\'assistant', de:'⬇ Assistent öffnen', es:'⬇ Abrir asistente', ru:'⬇ Открыть мастер'},
     'dep.openCloud':   {zh:'☁ 绑定云端 API（下载期间也能先聊）', en:'☁ Bind cloud API (chat while downloading)', ja:'☁ クラウド API を紐付け', ko:'☁ 클라우드 API 연결', fr:'☁ Lier l\'API cloud', de:'☁ Cloud-API binden', es:'☁ Vincular API en la nube', ru:'☁ Привязать облачный API'},
     'api.title':    {zh:'对外 API', en:'External API', ja:'対外 API', ko:'외부 API', fr:'API externe', de:'Externe API', es:'API externa', ru:'Внешний API'},
-    'api.sub':      {zh:'通过 OpenAI 兼容接口，让其他 Agent / 工具直接使用本地部署的模型', en:'Expose local models to other agents / tools via an OpenAI-compatible API'},
+    'api.sub':      {zh:'通过 OpenAI 兼容接口，让其他 Agent / 工具直接使用本地部署的模型',
+                     en:'Expose your locally deployed models to other agents / tools via an OpenAI-compatible API',
+                     ja:'OpenAI 互換 API を通じて、ローカルにデプロイしたモデルを他の Agent / ツールから直接利用可能に',
+                     ko:'OpenAI 호환 API로 로컬에 배포한 모델을 다른 Agent / 도구에서 바로 사용',
+                     fr:'Exposez vos modèles déployés localement à d\'autres agents / outils via une API compatible OpenAI',
+                     de:'Stellen Sie lokal bereitgestellte Modelle anderen Agents / Tools über eine OpenAI-kompatible API zur Verfügung',
+                     es:'Expose tus modelos desplegados localmente a otros agentes / herramientas mediante una API compatible con OpenAI',
+                     ru:'Предоставьте локально развёрнутые модели другим агентам / инструментам через API, совместимый с OpenAI'},
     'api.info':     {zh:'🔌 接入信息', en:'🔌 Connection Info', ja:'🔌 接続情報', ko:'🔌 접속 정보', fr:'🔌 Informations', de:'🔌 Verbindungsinfo', es:'🔌 Información', ru:'🔌 Сведения'},
     'api.addr':     {zh:'接口地址', en:'Endpoint', ja:'エンドポイント', ko:'엔드포인트', fr:'Adresse', de:'Endpunkt', es:'Dirección', ru:'Адрес'},
     'api.proto':    {zh:'协议', en:'Protocol', ja:'プロトコル', ko:'프로토콜', fr:'Protocole', de:'Protokoll', es:'Protocolo', ru:'Протокол'},
@@ -1170,13 +1191,26 @@ footer{margin-left:232px;padding:8px 20px;font-size:11px;color:var(--muted);back
     'hw.title':     {zh:'硬件实时监控', en:'Hardware Monitor', ja:'ハードウェア監視', ko:'하드웨어 모니터', fr:'Surveillance matérielle', de:'Hardware-Überwachung', es:'Monitor de hardware', ru:'Мониторинг оборудования'},
     'hw.cache':     {zh:'🧠 缓存状态', en:'🧠 Cache Status', ja:'🧠 キャッシュ状態', ko:'🧠 캐시 상태', fr:'🧠 État du cache', de:'🧠 Cache-Status', es:'🧠 Estado de caché', ru:'🧠 Состояние кэша'},
     'hw.trend':     {zh:'负载趋势（最近 5 分钟）', en:'Load trend (last 5 min)', ja:'負荷トレンド（直近5分）', ko:'부하 추이(최근 5분)', fr:'Tendance de charge (5 min)', de:'Last-Trend (5 Min)', es:'Tendencia de carga (5 min)', ru:'Тренд нагрузки (5 мин)'},
-    'hw.foot':      {zh:'数据每秒刷新 · Apple Silicon 统一内存按「显存」语义展示', en:'Refreshed every second · Apple Silicon unified memory shown as "VRAM"'},
+    'hw.foot':      {zh:'数据每秒刷新 · Apple Silicon 统一内存按「显存」语义展示',
+                     en:'Refreshed every second · Apple Silicon unified memory shown as "VRAM"',
+                     ja:'毎秒更新 · Apple Silicon の統合メモリは「VRAM」として表示',
+                     ko:'매초 새로고침 · Apple Silicon 통합 메모리는 "VRAM" 으로 표시',
+                     fr:'Actualisé chaque seconde · la mémoire unifiée Apple Silicon est affichée comme « VRAM »',
+                     de:'Jede Sekunde aktualisiert · Apple Silicon Unified Memory wird als „VRAM" dargestellt',
+                     es:'Actualizado cada segundo · la memoria unificada de Apple Silicon se muestra como «VRAM»',
+                     ru:'Обновляется ежесекундно · единая память Apple Silicon отображается как «VRAM»'},
     'set.title':    {zh:'🛠 应用设置', en:'🛠 Settings', ja:'🛠 設定', ko:'🛠 설정', fr:'🛠 Paramètres', de:'🛠 Einstellungen', es:'🛠 Ajustes', ru:'🛠 Настройки'},
     'wiz.title':    {zh:'🚀 初始化部署向导', en:'🚀 Setup Wizard', ja:'🚀 セットアップウィザード', ko:'🚀 설정 마법사', fr:'🚀 Assistant de configuration', de:'🚀 Einrichtungs-Assistent', es:'🚀 Asistente de configuración', ru:'🚀 Мастер настройки'},
     'wiz.step1':    {zh:'环境检测', en:'Environment', ja:'環境検出', ko:'환경 감지', fr:'Environnement', de:'Umgebung', es:'Entorno', ru:'Окружение'},
     'wiz.step2':    {zh:'选择模型', en:'Choose model', ja:'モデル選択', ko:'모델 선택', fr:'Choisir le modèle', de:'Modell wählen', es:'Elegir modelo', ru:'Выбор модели'},
     'wiz.step3':    {zh:'准备就绪', en:'Ready', ja:'準備完了', ko:'준비 완료', fr:'Prêt', de:'Bereit', es:'Listo', ru:'Готово'},
-    'wiz.loading':  {zh:'正在检测您的设备…', en:'Detecting your device…', ja:'デバイスを検出中…', ko:'장치 감지 중…', fr:'Détection de l\'appareil…', de:'Gerät wird erkannt…', es:'Detectando dispositivo…', ru:'Обнаружение устройства…'}
+    'wiz.loading':  {zh:'正在检测您的设备…', en:'Detecting your device…', ja:'デバイスを検出中…', ko:'장치 감지 중…', fr:'Détection de l\'appareil…', de:'Gerät wird erkannt…', es:'Detectando dispositivo…', ru:'Обнаружение устройства…'},
+    'dsh.connectTitle':{zh:'对话引擎未连接', en:'Chat engine not connected', ja:'対話エンジンに接続されていません', ko:'대화 엔진에 연결되지 않음', fr:'Moteur de conversation non connecté', de:'Chat-Engine nicht verbunden', es:'Motor de chat no conectado', ru:'Чат-движок не подключён'},
+    'dsh.retry':       {zh:'重新连接', en:'Reconnect', ja:'再接続', ko:'다시 연결', fr:'Reconnexion', de:'Erneut verbinden', es:'Reconectar', ru:'Переподключить'},
+    'dsh.retryInstall':{zh:'重试安装', en:'Retry install', ja:'インストールを再試行', ko:'설치 다시 시도', fr:'Nouvelle tentative d’installation', de:'Installation erneut versuchen', es:'Reintentar instalación', ru:'Повторить установку'},
+    'dsh.installTip':  {zh:'首次使用会解包内置的 DeepSeek Harness 与便携 Node 运行时，请稍候；更新时会自动覆盖到最新版本。', en:'First launch unpacks the built-in DeepSeek Harness and portable Node runtime — please wait; updates auto-overwrite to the latest version.', ja:'初回起動時に内蔵の DeepSeek Harness とポータブル Node ランタイムを展開します。少々お待ちください。更新時は最新版で自動上書きされます。', ko:'첫 실행 시 내장된 DeepSeek Harness와 휴대용 Node 런타임을 풉니다. 잠시 기다려 주세요. 업데이트 시 최신 버전으로 자동 덮어쓰기됩니다.', fr:'Au premier lancement, le DeepSeek Harness intégré et le runtime Node portable sont décompressés — veuillez patienter ; les mises à jour écrasent automatiquement la dernière version.', de:'Beim ersten Start werden das eingebaute DeepSeek Harness und die portable Node-Laufzeit entpackt — bitte warten; Updates überschreiben automatisch auf die neueste Version.', es:'En el primer inicio se desempaqueta el DeepSeek Harness integrado y el runtime Node portable; por favor espera; las actualizaciones sobrescriben automáticamente la última versión.', ru:'При первом запуске распаковываются встроенный DeepSeek Harness и переносимая среда Node — подождите; обновления автоматически перезаписываются последней версией.'},
+    'dsh.localOnly':   {zh:'未安装 dsh 也可使用「部署模型 / 硬件监控 / 对外 API / 设置」等本地功能。', en:'You can still use local features like Deploy Model / Hardware Monitor / External API / Settings without dsh installed.', ja:'dsh をインストールしていなくても、「モデル展開 / ハードウェア監視 / 外部 API / 設定」などのローカル機能は利用できます。', ko:'dsh 미설치 상태에서도 「모델 배포 / 하드웨어 모니터 / 외부 API / 설정」 등 로컬 기능을 사용할 수 있습니다.', fr:'Vous pouvez toujours utiliser les fonctions locales (Déployer un modèle / Surveillance matérielle / API externe / Paramètres) sans dsh installé.', de:'Auch ohne installiertes dsh sind lokale Funktionen wie Modell bereitstellen / Hardware-Überwachung / Externe API / Einstellungen nutzbar.', es:'Aunque dsh no esté instalado, puedes usar funciones locales como Desplegar modelo / Monitor de hardware / API externa / Ajustes.', ru:'Даже без установленного dsh доступны локальные функции: Развернуть модель / Мониторинг оборудования / Внешний API / Настройки.'},
+    'dep.startTip':    {zh:'打开部署向导，按推荐选择模型并一键后台拉取，下载完成后即可在「对话」页（DeepSeek Harness）中选用该模型。', en:'Open the deploy wizard, pick a recommended model and pull it in the background with one click; once downloaded you can use it in the Chat page (DeepSeek Harness).', ja:'デプロイウィザードを開き、推奨モデルを選んでワンクリックでバックグラウンド取得。ダウンロード完了後、チャットページ（DeepSeek Harness）で選択できます。', ko:'배포 마법사를 열고 권장 모델을 선택해 원클릭으로 백그라운드에서 가져오기. 다운로드 완료 후 채팅 페이지(DeepSeek Harness)에서 사용할 수 있습니다.', fr:'Ouvrez l’assistant de déploiement, choisissez un modèle recommandé et récupérez-le en arrière-plan en un clic ; une fois téléchargé, il est disponible dans la page Chat (DeepSeek Harness).', de:'Öffnen Sie den Bereitstellungs-Assistenten, wählen Sie ein empfohlenes Modell und laden Sie es mit einem Klick im Hintergrund; nach dem Download steht es auf der Chat-Seite (DeepSeek Harness) zur Verfügung.', es:'Abre el asistente de despliegue, elige un modelo recomendado y recíbelo en segundo plano con un clic; una vez descargado, úsalo en la página de Chat (DeepSeek Harness).', ru:'Откройте мастер развёртывания, выберите рекомендованную модель и загрузите её в фоне одним кликом; после загрузки модель появится на странице Чат (DeepSeek Harness).'}
   };
   function curLang(){ try{ return localStorage.getItem('localflow_lang') || 'zh'; }catch(e){ return 'zh'; } }
   function t(key){
@@ -1237,7 +1271,8 @@ footer{margin-left:232px;padding:8px 20px;font-size:11px;color:var(--muted);back
       '.lang-row.active{background:rgba(109,139,255,.16);font-weight:600;}'+
       '.lang-flag{font-size:16px;}'+
       '.lang-name{flex:1;}'+
-      '.lang-check{color:#6d8bff;}';
+      '.lang-check{color:#6d8bff;}'+
+      '@media (max-width:880px){#lang-fab{bottom:84px;}.lang-pop{bottom:140px;}}';
     document.head.appendChild(s);
   }
   function boot(){ injectStyle(); applyI18n(); buildSwitcher(); }
