@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<html lang="zh-CN" data-page-node-id="aES8a2i4CZaiHzN9P0XkWT">
+<head data-page-node-id="qQPrkXgjqBtlF8xdATNqQJ">
+<meta charset="UTF-8" data-page-node-id="nlWmszXeycYkwjA1o3VVGP">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="w672utqng7PgEIUj0F9XPj">
 <title>LocalFlow AI</title>
 <style>
 :root{
@@ -848,252 +848,406 @@ footer{margin-left:232px;padding:8px 20px;font-size:11px;color:var(--muted);back
 
 </style>
 </head>
-<body>
+<body data-page-node-id="V8ITnMpd7lskGAaw5dbA6K">
 
-<header>
-  <div class="logo">L</div>
-  <span class="brand">LocalFlow AI</span>
-  <nav class="v-tabs">
-    <button class="v-tab active" data-view="chat">💬 对话</button>
-    <button class="v-tab" data-view="deploy">📥 部署模型</button>
-    <button class="v-tab" data-view="api">🔌 对外 API</button>
-    <button class="v-tab" data-view="settings">🛠 设置</button>
+<header data-page-node-id="oNHWkTjZhapvKVq3OI2y5B">
+  <div class="logo" data-page-node-id="WStDy7x5f3hnpT8Fm4HvYh">L</div>
+  <span class="brand" data-page-node-id="vSMXGgZeF4IldW3a6UMwaS">LocalFlow AI</span>
+  <nav class="v-tabs" data-page-node-id="Z2VzQbEcHoPzBASfYmG9BC">
+    <button class="v-tab active" data-view="chat" data-page-node-id="7nXuZt5Hpgg2AE1oAwqsdp" data-i18n="nav.chat">💬 对话</button>
+    <button class="v-tab" data-view="deploy" data-page-node-id="UTQo4JxSnuOmDtQC8m3hWD" data-i18n="nav.deploy">📥 部署模型</button>
+    <button class="v-tab" data-view="api" data-page-node-id="lOSWj6g8auGItZwBhoufT3" data-i18n="nav.api">🔌 对外 API</button>
+    <button class="v-tab" data-view="settings" data-page-node-id="syrmqvKI8nXC3lUI4bcDa1" data-i18n="nav.settings">🛠 设置</button>
   </nav>
-  <div class="header-spacer"></div>
-  <button class="gear-btn" id="wizard-open" title="部署向导">⚙</button>
-  <button class="gear-btn" id="theme-btn" title="切换浅色 / 深色主题">🌓</button>
-  <div class="hw-mini" id="hw-mini" title="点开查看硬件详情">
-    <span class="hm" data-k="cpu"><em>CPU</em><i class="hm-bar"><i class="fill hb-cpu"></i></i><b>--</b></span>
-    <span class="hm" data-k="mem"><em>内存</em><i class="hm-bar"><i class="fill hb-mem"></i></i><b>--</b></span>
-    <span class="hm" data-k="gpu"><em>GPU</em><i class="hm-bar"><i class="fill hb-gpu"></i></i><b>--</b></span>
-    <span class="hm" data-k="vram"><em>显存</em><i class="hm-bar"><i class="fill hb-vram"></i></i><b>--</b></span>
-    <div class="hw-tip" id="hw-tip"></div>
+  <div class="header-spacer" data-page-node-id="auqBAByfI7VDVM4QugYxBm"></div>
+  <button class="gear-btn" id="wizard-open" title="部署向导" data-page-node-id="hFgwcqVVwAGEzLOsGjRt7v" data-i18n-title="hdr.wizard">⚙</button>
+  <button class="gear-btn" id="theme-btn" title="切换浅色 / 深色主题" data-page-node-id="OYqFoSXMi5BaKFUR6xb0kN" data-i18n-title="hdr.theme">🌓</button>
+  <div class="hw-mini" id="hw-mini" title="点开查看硬件详情" data-page-node-id="EpIcATyr4EBbjVvJkMAm0M">
+    <span class="hm" data-k="cpu" data-page-node-id="pHYPDd1OBhD59XUIAH2esL"><em data-page-node-id="zOb2IW0RfNxPeBLZNBiThI" data-i18n="hw.cpu">CPU</em><i class="hm-bar" data-page-node-id="55F9Rry8DGWWDweVbYiUL0"><i class="fill hb-cpu" data-page-node-id="ryCVpIo5WXakBRzNkSMe6P"></i></i><b data-page-node-id="awBUBwGuL6HcrDvB9mC5WM">--</b></span>
+    <span class="hm" data-k="mem" data-page-node-id="HkgqgTkF53Pu7vPlzIrARw"><em data-page-node-id="PiNofr2kVndPJpXhZOGidX" data-i18n="hw.mem">内存</em><i class="hm-bar" data-page-node-id="ZNkEBW1x5blzTAGDvIIetw"><i class="fill hb-mem" data-page-node-id="RPmOl5Lupa6ZdAIn0XmDju"></i></i><b data-page-node-id="E4IlHo1DYLFygIpMYDjUWv">--</b></span>
+    <span class="hm" data-k="gpu" data-page-node-id="w5C0fLGDarg59Z6v6e5aUo"><em data-page-node-id="58gAD6QynIRFVs6W0xu1fE" data-i18n="hw.gpu">GPU</em><i class="hm-bar" data-page-node-id="7AuZrFSacfWs9aKb7hQCzD"><i class="fill hb-gpu" data-page-node-id="qQFp0GGxI6gzAHCCYSlAVP"></i></i><b data-page-node-id="wu4tJQCOsiQI53X091WAwB">--</b></span>
+    <span class="hm" data-k="vram" data-page-node-id="1iS2Vjl21KoLfRfqmtJ7co"><em data-page-node-id="vTg4baBa2sLqPT1ICSlUQi" data-i18n="hw.vram">显存</em><i class="hm-bar" data-page-node-id="WEueEbB4FGr8xhOqga0HfP"><i class="fill hb-vram" data-page-node-id="nf8FFHJq8uyZ7rMrHxyOwD"></i></i><b data-page-node-id="H9NvGLlSPmrsHoItq3CcrZ">--</b></span>
+    <div class="hw-tip" id="hw-tip" data-page-node-id="K1IOGbu0oCA7PFhvRIqzdc"></div>
   </div>
-  <div class="backend-status" id="be-status"><span class="dot"></span>后端 <b>检测中</b></div>
+  <div class="backend-status" id="be-status" data-page-node-id="fSxbUe8OS6E39Ptnv4wpbh"><span class="dot" data-page-node-id="e72qyTroxAQ6Pne9eqWSoW"></span>后端 <b data-page-node-id="C1ODIcWTLtbGfrMlb8zvUR">检测中</b></div>
 </header>
 
-<div class="layout">
+<div class="layout" data-page-node-id="flfanshQliOzffh0Nf27ME">
 
   <!-- 侧边栏 -->
-  <nav class="sidebar">
-    <button class="new-chat-btn" id="new-chat-btn">＋ 新建对话</button>
-    <div class="side-title">历史会话</div>
-    <input class="search-box" id="session-search" type="text" placeholder="🔍 搜索会话…" autocomplete="off">
-    <div class="sidebar-scroll" id="session-list">
-      <div class="sidebar-empty">暂无会话<br>点击上方「新建对话」开始</div>
+  <nav class="sidebar" data-page-node-id="aRW1EJlNxCpKGXl5R47J3c">
+    <button class="new-chat-btn" id="new-chat-btn" data-page-node-id="rIF9M50ZFFGcf7UHquaxto">＋ 新建对话</button>
+    <div class="side-title" data-page-node-id="5zyGrLGl9yRzwB75PVZTaJ" data-i18n="side.history">历史会话</div>
+    <input class="search-box" id="session-search" type="text" placeholder="🔍 搜索会话…" autocomplete="off" data-page-node-id="oIqwrQGkFe7kvh9LJck4OA" data-i18n-placeholder="side.search">
+    <div class="sidebar-scroll" id="session-list" data-page-node-id="FTlFQ2xaFcr9GBdjVgue3A">
+      <div class="sidebar-empty" data-page-node-id="xQD1THHEOc6TS3vT11vvoQ">暂无会话<br data-page-node-id="ambQKWyVZjZRCdR3ivwvCB">点击上方「新建对话」开始</div>
     </div>
   </nav>
-  <div class="sb-resizer" id="sb-resizer" title="左右拖动调整宽度"></div>
+  <div class="sb-resizer" id="sb-resizer" title="左右拖动调整宽度" data-page-node-id="jtN0G0iejGXgKcKQ3Pu2dH"></div>
 
   <!-- 对话视图：内嵌 DeepSeek Harness（聊天统一由 dsh 承担） -->
-  <main class="view active" id="view-chat">
-    <iframe id="dsh-frame" src="about:blank" title="DeepSeek Harness"></iframe>
+  <main class="view active" id="view-chat" data-page-node-id="DIp45cXJCl4C6iOm5nWe7G">
+    <iframe id="dsh-frame" src="about:blank" title="DeepSeek Harness" data-page-node-id="u6NyigKW1AvJLhnn1wHFZ6"></iframe>
     <!-- dsh 不可达时的引导卡（方案 A：不因缺失 dsh 而白屏） -->
-    <div id="dsh-guide" class="dsh-guide" hidden>
-      <div class="dsh-guide-card">
+    <div id="dsh-guide" class="dsh-guide" hidden data-page-node-id="lM1kXRA1cM4fXLPXMyFBim">
+      <div class="dsh-guide-card" data-page-node-id="syMhC2TbGptkwmmTz2zdmg">
         <!-- 自动安装 / 更新中（内置 dsh 零安装，带进度条） -->
-        <div id="dsh-install-wrap" hidden>
-          <div class="dsh-guide-logo">L</div>
-          <h2 id="dsh-install-title">正在准备对话引擎…</h2>
-          <p id="dsh-install-msg"></p>
-          <div class="dsh-progress"><div class="dsh-progress-fill" id="dsh-progress-fill"></div></div>
-          <div class="dsh-progress-pct" id="dsh-progress-pct">0%</div>
-          <p class="dsh-guide-tip">首次使用会解包内置的 DeepSeek Harness 与便携 Node 运行时，请稍候；更新时会自动覆盖到最新版本。</p>
-          <p class="dsh-guide-error" id="dsh-install-error" hidden></p>
-          <button id="dsh-install-retry" class="btn-primary" hidden>重试安装</button>
+        <div id="dsh-install-wrap" hidden data-page-node-id="aclQg1l63NgVR9LpXx8Wg5">
+          <div class="dsh-guide-logo" data-page-node-id="uZAIqGJKt1PQ8KS15D7Kw8">L</div>
+          <h2 id="dsh-install-title" data-page-node-id="Pntkn2UG0BW5AZlgT6dIC4">正在准备对话引擎…</h2>
+          <p id="dsh-install-msg" data-page-node-id="RHxl76n3BZoKX3h8ClTKMk"></p>
+          <div class="dsh-progress" data-page-node-id="51H0e0Nc9s9m6J54eUHDxY"><div class="dsh-progress-fill" id="dsh-progress-fill" data-page-node-id="A0BWPtBvzSiOLc0NVGCJjA"></div></div>
+          <div class="dsh-progress-pct" id="dsh-progress-pct" data-page-node-id="sDiMNKPBS5p9hgX9NttFPX">0%</div>
+          <p class="dsh-guide-tip" data-page-node-id="Z2GAvxF4ePqe3rEhxLtolh">首次使用会解包内置的 DeepSeek Harness 与便携 Node 运行时，请稍候；更新时会自动覆盖到最新版本。</p>
+          <p class="dsh-guide-error" id="dsh-install-error" hidden data-page-node-id="ctIIPOuBsBF1cnfV4rJzbl"></p>
+          <button id="dsh-install-retry" class="btn-primary" hidden data-page-node-id="sjXRRJmmxRwLt9gR5mSdzC">重试安装</button>
         </div>
         <!-- 手动引导（不可达 / 安装失败兜底） -->
-        <div id="dsh-manual-wrap">
-          <div class="dsh-guide-logo">L</div>
-          <h2>对话引擎未连接</h2>
+        <div id="dsh-manual-wrap" data-page-node-id="r8KBCR5jrJqmB093YTumu3">
+          <div class="dsh-guide-logo" data-page-node-id="QiVa9hW5j99fCbMedHYYDg">L</div>
+          <h2 data-page-node-id="tBu8emO64ryF4HZS4JPp26">对话引擎未连接</h2>
           <!-- 启动诊断（dsh 崩溃时显示真实报错，便于排查/反馈） -->
-          <p class="dsh-guide-error" id="dsh-launch-error" hidden></p>
-          <pre id="dsh-launch-cmd" class="dsh-launch-cmd" hidden></pre>
-          <p class="dsh-guide-tip" id="dsh-launch-log" hidden></p>
-          <p>LocalFlow 的对话与 Agent 能力由 <b>DeepSeek Harness（dsh）</b> 提供，当前未在
-            <code id="dsh-host-hint">127.0.0.1:8080</code> 检测到 dsh 服务。</p>
-          <ol class="dsh-guide-steps">
-            <li>安装并启动 dsh（任选其一）：
-              <pre>npx @deepseek-ai/dsh --profile web</pre>
-              若已克隆仓库并在 <code>dsh-poc/</code> 下装好依赖，可直接运行：
-              <pre>node_modules/.bin/dsh --profile web</pre>
-              <span class="dsh-guide-tip">（注意：<code>dsh-poc/</code> 的 <code>package.json</code> 没有 <code>dev</code> 脚本，<code>pnpm run dev</code> 会报错。）</span>
+          <p class="dsh-guide-error" id="dsh-launch-error" hidden data-page-node-id="sRFfEC9Awe5XFSPRIhAZH4"></p>
+          <pre id="dsh-launch-cmd" class="dsh-launch-cmd" hidden data-page-node-id="DBy1BTVOAXHQKlqoZMJa5Z"></pre>
+          <p class="dsh-guide-tip" id="dsh-launch-log" hidden data-page-node-id="YFFUuJz9Ita3YhNw1ft3cj"></p>
+          <p data-page-node-id="P0BVAwul6DuwjKaNxSOtXu">LocalFlow 的对话与 Agent 能力由 <b data-page-node-id="cMsazlifeL0qD4ufpsfm3A">DeepSeek Harness（dsh）</b> 提供，当前未在
+            <code id="dsh-host-hint" data-page-node-id="LRgix52EZxRjVwGxWbAjC3">127.0.0.1:8080</code> 检测到 dsh 服务。</p>
+          <ol class="dsh-guide-steps" data-page-node-id="NQBAU6NU41kZD2zsk3QM4C">
+            <li data-page-node-id="SVCsstsIusem6ocdg3Thqp">安装并启动 dsh（任选其一）：
+              <pre data-page-node-id="EZAOR3dR6p8bJ675MQle9t">npx @deepseek-ai/dsh --profile web</pre>
+              若已克隆仓库并在 <code data-page-node-id="LULnePcm3oGp3QvKCEDo72">dsh-poc/</code> 下装好依赖，可直接运行：
+              <pre data-page-node-id="dD8hZbaP5TcJ6bwMhEWAAH">node_modules/.bin/dsh --profile web</pre>
+              <span class="dsh-guide-tip" data-page-node-id="fpil3VavMU4rg2raRN8Ptv">（注意：<code data-page-node-id="LSxPKF6NRJAS7acK7kcneu">dsh-poc/</code> 的 <code data-page-node-id="rSQBqULVGnlu2p2N3OAlC0">package.json</code> 没有 <code data-page-node-id="0OQQQs0QbfkNhbDiSMVtfL">dev</code> 脚本，<code data-page-node-id="YE5NduqXrjRcBLo5FAeajJ">pnpm run dev</code> 会报错。）</span>
             </li>
-            <li>确认 dsh 已监听 <code>8080</code> 后，点击下方「重新连接」。</li>
+            <li data-page-node-id="nNpAJ599EKeiDsRFUYbQ4P">确认 dsh 已监听 <code data-page-node-id="pqWvNV4kxZkBGV97TOF4d2">8080</code> 后，点击下方「重新连接」。</li>
           </ol>
-          <button id="dsh-retry" class="btn-primary">重新连接</button>
-          <p class="dsh-guide-tip">未安装 dsh 也可使用「部署模型 / 硬件监控 / 对外 API / 设置」等本地功能。</p>
+          <button id="dsh-retry" class="btn-primary" data-page-node-id="OJuXAMpjJTtbTw4vgoACD6">重新连接</button>
+          <p class="dsh-guide-tip" data-page-node-id="09sMAT1upSIzDd8liBZHQ2">未安装 dsh 也可使用「部署模型 / 硬件监控 / 对外 API / 设置」等本地功能。</p>
         </div>
       </div>
     </div>
-    <div class="chat-scroll" id="chat-scroll">
-      <div class="chat-inner" id="chat-inner">
-        <div class="empty-state" id="empty-state">
-          <div class="empty-logo">L</div>
-          <h2>开始对话</h2>
-          <p>LocalFlow AI 将优先调用本地推理，智能拆分子任务，云端协作攻坚复杂问题。</p>
-          <div class="empty-hint">
-            <span class="hint-chip">🚀 本地优先</span>
-            <span class="hint-chip">🧠 多模型协同</span>
-            <span class="hint-chip">⚡ 高命中缓存</span>
+    <div class="chat-scroll" id="chat-scroll" data-page-node-id="aauT3IR3Disd80VclGsf9Q">
+      <div class="chat-inner" id="chat-inner" data-page-node-id="mxxlmF9EzpJHlTrVhQr7M2">
+        <div class="empty-state" id="empty-state" data-page-node-id="qQFAwT48wcIYXZWtN1ieJS">
+          <div class="empty-logo" data-page-node-id="hFvapOtKeIaopMjX92Atjt">L</div>
+          <h2 data-page-node-id="NKSVDmqLzalX5ywGoZP3AI" data-i18n="empty.title">开始对话</h2>
+          <p data-page-node-id="YMFdRrcIuZVujRHC6UQET9" data-i18n="empty.desc">LocalFlow AI 将优先调用本地推理，智能拆分子任务，云端协作攻坚复杂问题。</p>
+          <div class="empty-hint" data-page-node-id="qaPmNIelEAEkKnd2IMZzto">
+            <span class="hint-chip" data-page-node-id="FsmT4LpiOGFuO6R1O1CAql" data-i18n="empty.local">🚀 本地优先</span>
+            <span class="hint-chip" data-page-node-id="v5AEOFwaOlAVAVHaKpEkrM" data-i18n="empty.multi">🧠 多模型协同</span>
+            <span class="hint-chip" data-page-node-id="4rZv5NfkZD28Ot3bqB0DDh" data-i18n="empty.cache">⚡ 高命中缓存</span>
           </div>
         </div>
       </div>
     </div>
-    <button class="scroll-bottom-pill" id="scroll-bottom-pill" title="回到底部">↓ 回到底部</button>
-    <div id="multi-bar">
-      <span class="mb-count">已选 <b>0</b> 条</span>
-      <button class="mb-btn" id="mb-all">全选</button>
-      <button class="mb-btn primary" id="mb-export">导出 Markdown</button>
-      <button class="mb-btn" id="mb-cancel">取消</button>
+    <button class="scroll-bottom-pill" id="scroll-bottom-pill" title="回到底部" data-page-node-id="mFXA8J6mB8svqzqIXT5jzn" data-i18n="scroll.bottom" data-i18n-title="scroll.bottomTitle">↓ 回到底部</button>
+    <div id="multi-bar" data-page-node-id="NsWvUZxuk4NiTUvy5cw73q">
+      <span class="mb-count" data-page-node-id="DoxSNuDEXmqSbO8a8l5O4R">已选 <b data-page-node-id="hNAOY6ZU2HzRHQ0qoNutYS">0</b> 条</span>
+      <button class="mb-btn" id="mb-all" data-page-node-id="jFQ8NsTx0Wcv46NReKqeFv" data-i18n="multi.all">全选</button>
+      <button class="mb-btn primary" id="mb-export" data-page-node-id="N5OrgzUi9jUQSAjElTP81E" data-i18n="multi.export">导出 Markdown</button>
+      <button class="mb-btn" id="mb-cancel" data-page-node-id="OjLyc6vA0By8hMYG0XhaxD" data-i18n="multi.cancel">取消</button>
     </div>
-    <div id="at-pop"></div>
-    <div class="ctx-bar" title="当前模型上下文占用">
-      <span class="engine-pill" id="engine-pill">
-        <button class="ep-btn ep-local on" data-eng="local" title="使用本地 Ollama 模型">⚙ 本地</button>
-        <button class="ep-btn ep-cloud" data-eng="cloud" title="使用云端 API 模型">☁ 云端</button>
+    <div id="at-pop" data-page-node-id="esAYzcIP8LuUoRpkl1afui"></div>
+    <div class="ctx-bar" title="当前模型上下文占用" data-page-node-id="31a4rTIzXNwgs5tXKWUatw">
+      <span class="engine-pill" id="engine-pill" data-page-node-id="0fmmYh7K15bemr4KdJP0Ob">
+        <button class="ep-btn ep-local on" data-eng="local" title="使用本地 Ollama 模型" data-page-node-id="coY9neFaMuUgW3izkAKsVA" data-i18n="ctx.local" data-i18n-title="ctx.localTitle">⚙ 本地</button>
+        <button class="ep-btn ep-cloud" data-eng="cloud" title="使用云端 API 模型" data-page-node-id="FhoEXlQjiCql5VDFCgdPNj" data-i18n="ctx.cloud" data-i18n-title="ctx.cloudTitle">☁ 云端</button>
       </span>
-      <select class="ep-model" id="ep-model" title="选择当前模型：本地态列本地 Ollama 模型，云端态列已绑定云端模型（同一时刻仅用一个）"></select>
-      <span class="ctx-label">上下文占用</span>
-      <span class="ctx-model" id="ctx-model">…</span>
-      <span class="ctx-meter"><i id="ctx-fill"></i></span>
-      <span class="ctx-txt" id="ctx-txt">0 / 0</span>
-      <span class="ctx-label" id="sess-tokens" title="本会话累计消耗 tokens">0 tokens</span>
+      <select class="ep-model" id="ep-model" title="选择当前模型：本地态列本地 Ollama 模型，云端态列已绑定云端模型（同一时刻仅用一个）" data-page-node-id="7NYADStHg9tvQmCcOcyM1R"></select>
+      <span class="ctx-label" data-page-node-id="pSeGtk40gKdGTJOejbViKj" data-i18n="ctx.label">上下文占用</span>
+      <span class="ctx-model" id="ctx-model" data-page-node-id="qsNnGgIxak6wz0kox8YSTm">…</span>
+      <span class="ctx-meter" data-page-node-id="Jw7eNZSUY4yjUc9By8fZfS"><i id="ctx-fill" data-page-node-id="1qEXFcCE17bqOlbdq0TWc0"></i></span>
+      <span class="ctx-txt" id="ctx-txt" data-page-node-id="n2I9RvedQE0qb6urkMHKzc">0 / 0</span>
+      <span class="ctx-label" id="sess-tokens" title="本会话累计消耗 tokens" data-page-node-id="kOgtFYN5sJOdjFmagYV3RC">0 tokens</span>
     </div>
-    <div class="input-bar">
-      <div class="input-wrap">
-          <div class="drop-hint">松开以添加附件</div>
-          <div class="input-box">
+    <div class="input-bar" data-page-node-id="QfK4CBEmHdh5I8bgt38gGU">
+      <div class="input-wrap" data-page-node-id="mzcO2KfnkEyspmU1GbGjbB">
+          <div class="drop-hint" data-page-node-id="ZH0xM7fMYFuOvHlv8pQuA8">松开以添加附件</div>
+          <div class="input-box" data-page-node-id="2TNaIrbGRoUpGeuF6u83dU">
           <!-- Agent 开关 / 运行台 / 工具按钮已移除（交由 dsh 承担；保留代码可回退） -->
-          <textarea id="input" rows="1" placeholder="输入消息，Enter 发送，Shift＋Enter 换行…"></textarea>
-          <button class="voice-btn" id="voice-btn" title="语音输入（需浏览器麦克风授权）">🎤</button>
-          <button class="attach-btn" id="attach-btn" title="添加文件给 AI 查看（支持文本类文件）">📎</button>
-          <button class="send-btn" id="send-btn" title="发送">➤</button>
+          <textarea id="input" rows="1" placeholder="输入消息，Enter 发送，Shift＋Enter 换行…" data-i18n-placeholder="input.placeholder"></textarea>
+          <button class="voice-btn" id="voice-btn" title="语音输入（需浏览器麦克风授权）" data-page-node-id="aQiNqmezybILVAOEdtnOCB" data-i18n-title="input.voice">🎤</button>
+          <button class="attach-btn" id="attach-btn" title="添加文件给 AI 查看（支持文本类文件）" data-page-node-id="ZNB0p8xwjAq7b2DFeKKkuo" data-i18n-title="input.attach">📎</button>
+          <button class="send-btn" id="send-btn" title="发送" data-page-node-id="v3zKdSoYDo0vCdrE7yVtfJ" data-i18n-title="input.send">➤</button>
         </div>
-        <div class="attach-strip" id="attach-strip"></div>
-        <input type="file" id="attach-input" multiple hidden>
-        <div class="input-hint" id="input-hint"></div>
+        <div class="attach-strip" id="attach-strip" data-page-node-id="rBmSaowDSK5QjokJ9UrQFz"></div>
+        <input type="file" id="attach-input" multiple hidden data-page-node-id="mtNjfMJbwrxX418LIgnoZL">
+        <div class="input-hint" id="input-hint" data-page-node-id="Q8qku34bfwh0SBjy5oTAEv"></div>
       </div>
-      <div class="tool-pop" id="tool-pop"></div>
+      <div class="tool-pop" id="tool-pop" data-page-node-id="kwdvgELdNGfPyIypKeA4LI"></div>
     </div>
   </main>
 
   <!-- ===== 部署本地模型视图 ===== -->
-  <main class="view" id="view-deploy">
-    <div class="dep-panel">
-      <div class="dep-head">
-        <button class="hw-back" id="dep-back" title="返回对话">← 返回对话</button>
-        <div class="dep-title"><span class="dot"></span>部署本地模型</div>
-        <div class="dep-sub">检测设备 → 选择模型 → 一键下载，即可在本机运行大模型</div>
+  <main class="view" id="view-deploy" data-page-node-id="IfdSUlamRrATQI8sWSFOUt">
+    <div class="dep-panel" data-page-node-id="sOUxOGvKBqhyCrb9DkpxWA">
+      <div class="dep-head" data-page-node-id="O2Jr29vEAmB74ZD0OtAMxD">
+        <button class="hw-back" id="dep-back" title="返回对话" data-page-node-id="ENsBASjqqjsETjgiG64AG0" data-i18n-title="back.title">← 返回对话</button>
+        <div class="dep-title" data-page-node-id="4qsBfUjI830oYRGrn76cza"><span class="dot" data-page-node-id="FDXwK3kFOqTnUoD6ItLCp3"></span><span data-i18n="dep.title">部署本地模型</span></div>
+        <div class="dep-sub" data-page-node-id="NVHNz5IcBvEVZVQJRVLxqI" data-i18n="dep.sub">检测设备 → 选择模型 → 一键下载，即可在本机运行大模型</div>
       </div>
 
-      <div class="dep-grid">
-        <div class="dep-card dep-env">
-          <div class="dep-card-title">🖥 设备与运行环境</div>
-          <div class="dep-env-rows" id="dep-env">
-            <div class="dep-row"><span>平台</span><b class="dep-wait">检测中…</b></div>
-            <div class="dep-row"><span>CPU / 内存</span><b class="dep-wait">检测中…</b></div>
-            <div class="dep-row"><span>GPU</span><b class="dep-wait">检测中…</b></div>
-            <div class="dep-row"><span>Ollama 服务</span><b class="dep-wait">检测中…</b></div>
-            <div class="dep-row"><span>已装本地模型</span><b class="dep-wait">检测中…</b></div>
-            <div class="dep-row"><span>本地容量建议</span><b class="dep-wait">检测中…</b></div>
+      <div class="dep-grid" data-page-node-id="cQcBip6bGmNJgiytE9m1fz">
+        <div class="dep-card dep-env" data-page-node-id="lw41STDlBcEnTHYyaMPLzS">
+          <div class="dep-card-title" data-page-node-id="moK0eblaTHaBTS7v4anP2J" data-i18n="dep.env">🖥 设备与运行环境</div>
+          <div class="dep-env-rows" id="dep-env" data-page-node-id="vPSoPAMncgcRz6hy04yVui">
+            <div class="dep-row" data-page-node-id="UbqRSQFngP0jB1K66UAKYO"><span data-page-node-id="KWdprnG43bkcp31gc9OuCT" data-i18n="dep.env.platform">平台</span><b class="dep-wait" data-page-node-id="UtmFrR7x5D883rlL8zNYrr">检测中…</b></div>
+            <div class="dep-row" data-page-node-id="GLn4OoWGYbjahz52au4HAJ"><span data-page-node-id="HLzvOkgIB8GMuPAnrdR0ob" data-i18n="dep.env.cpumem">CPU / 内存</span><b class="dep-wait" data-page-node-id="O8gblolqf2AzMcHVgFJRSe">检测中…</b></div>
+            <div class="dep-row" data-page-node-id="FgoHKrmlXWbA4J0Fc1DRlc"><span data-page-node-id="V18s9056jV4pMcs10jtDRh" data-i18n="dep.env.gpu">GPU</span><b class="dep-wait" data-page-node-id="YknyO2Cw4Tx93ArNqeyuHC">检测中…</b></div>
+            <div class="dep-row" data-page-node-id="KHPb6qwCd0Kh4gGQFe2ptK"><span data-page-node-id="OgkY9uDI5yiA7Vfecbt3V1" data-i18n="dep.env.ollama">Ollama 服务</span><b class="dep-wait" data-page-node-id="A60uSY1XfTURN3tX6aVrpP">检测中…</b></div>
+            <div class="dep-row" data-page-node-id="4mnqPAsFqvnwCFCTF70SLR"><span data-page-node-id="CGebfz3iQ2XirE168wIh9O" data-i18n="dep.env.installed">已装本地模型</span><b class="dep-wait" data-page-node-id="qJmHu5cR5aMlOPRT8A99XZ">检测中…</b></div>
+            <div class="dep-row" data-page-node-id="JLRlFVhqApZZz4NTQT8FUI"><span data-page-node-id="10sBNEuHqDDNQFtv4WFQO2" data-i18n="dep.env.suggest">本地容量建议</span><b class="dep-wait" data-page-node-id="L1GBMRPk6ufLLhSLhnaDAw">检测中…</b></div>
           </div>
         </div>
 
-        <div class="dep-card dep-actions">
-          <div class="dep-card-title">🚀 开始部署</div>
-          <p class="dep-tip">打开部署向导，按推荐选择模型并一键后台拉取，下载完成后即可在「对话」页（DeepSeek Harness）中选用该模型。</p>
-          <button class="dep-big-btn" id="dep-open-wizard">⬇ 打开部署向导</button>
-          <button class="dep-mid-btn" id="dep-open-cloud">☁ 绑定云端 API（下载期间也能先聊）</button>
-          <div class="dep-note">已装模型会同步出现在 dsh 模型选择器的「LocalFlow (本机)」分组中；如需自动同步可运行 <code>dsh-poc/sync-localflow-models.mjs --watch</code>。</div>
+        <div class="dep-card dep-actions" data-page-node-id="01sbyrSQSxlWMBrEUBoMg0">
+          <div class="dep-card-title" data-page-node-id="S1EqxMwQfCapZaX4BZNR0R" data-i18n="dep.start">🚀 开始部署</div>
+          <p class="dep-tip" data-page-node-id="lr0CAFtS03esbzk0qSKR7k">打开部署向导，按推荐选择模型并一键后台拉取，下载完成后即可在「对话」页（DeepSeek Harness）中选用该模型。</p>
+          <button class="dep-big-btn" id="dep-open-wizard" data-page-node-id="0mKKCHVQHxqsCu1dSMockm" data-i18n="dep.openWizard">⬇ 打开部署向导</button>
+          <button class="dep-mid-btn" id="dep-open-cloud" data-page-node-id="bI8KeCFUCXZyodSVZC9WSA" data-i18n="dep.openCloud">☁ 绑定云端 API（下载期间也能先聊）</button>
+          <div class="dep-note" data-page-node-id="A3Stbqbdi2jy2mynrxm6nD">已装模型会同步出现在 dsh 模型选择器的「LocalFlow (本机)」分组中；如需自动同步可运行 <code data-page-node-id="iIiP6u1et335z9w9XpJD5o">dsh-poc/sync-localflow-models.mjs --watch</code>。</div>
         </div>
       </div>
     </div>
   </main>
 
   <!-- ===== 对外 API 视图 ===== -->
-  <main class="view" id="view-api">
-    <div class="dep-panel">
-      <div class="dep-head">
-        <button class="hw-back" id="api-back" title="返回对话">← 返回对话</button>
-        <div class="dep-title"><span class="dot"></span>对外 API</div>
-        <div class="dep-sub">通过 OpenAI 兼容接口，让其他 Agent / 工具直接使用本地部署的模型</div>
+  <main class="view" id="view-api" data-page-node-id="Erz7hTOekB4RDYLlTvVLPO">
+    <div class="dep-panel" data-page-node-id="0zBj8zdOt9dvWyeVxTmlxJ">
+      <div class="dep-head" data-page-node-id="Gow5RH3uwHfFWgawHkxegy">
+        <button class="hw-back" id="api-back" title="返回对话" data-page-node-id="SrhtCI7VH8DAc760moGtp8" data-i18n-title="back.title">← 返回对话</button>
+        <div class="dep-title" data-page-node-id="AmlANqlZpDjXr0EHHjLDSo"><span class="dot" data-page-node-id="UcUjevXBIBkzUOMmpFNZyC"></span><span data-i18n="api.title">对外 API</span></div>
+        <div class="dep-sub" data-page-node-id="F9iEGjPGih9QuwgaLMnmPt" data-i18n="api.sub">通过 OpenAI 兼容接口，让其他 Agent / 工具直接使用本地部署的模型</div>
       </div>
 
-      <div class="dep-grid">
-        <div class="dep-card">
-          <div class="dep-card-title">🔌 接入信息</div>
-          <div class="api-row"><span>接口地址</span><b><code class="api-code" id="api-base-url">检测中…</code><button class="api-copy" data-copy="api-base-url" title="复制">📋</button></b></div>
-          <div class="api-row"><span>协议</span><b>OpenAI 兼容 · /v1/models · /v1/chat/completions（支持 SSE 流式）</b></div>
-          <div class="api-row"><span>可用模型</span><b id="api-models">检测中…</b></div>
-          <div class="api-row"><span>鉴权</span><b id="api-auth-state">检测中…</b></div>
-          <div class="api-note">仅本机可访问（127.0.0.1）。如需局域网内其他设备访问，请以 <code>--host 0.0.0.0</code> 启动后端。</div>
+      <div class="dep-grid" data-page-node-id="0uzHtGs2dJtb9SYjCRCkXw">
+        <div class="dep-card" data-page-node-id="zmv1F8EJz72gbDVBzAGcSd">
+          <div class="dep-card-title" data-page-node-id="cHErTlVK1gyZ7CLnQzFNVB" data-i18n="api.info">🔌 接入信息</div>
+          <div class="api-row" data-page-node-id="xGdvN5hMkB2m1OqUMQFuWr"><span data-page-node-id="CCX53VR2mszrHYHl9HBlYC" data-i18n="api.addr">接口地址</span><b data-page-node-id="EwPgORG0b9ekW4hKRzrDsf"><code class="api-code" id="api-base-url" data-page-node-id="5448Y5ioFkVFTIC09tpZZm">检测中…</code><button class="api-copy" data-copy="api-base-url" title="复制" data-page-node-id="Nr8QEp5U2jxVt3Ha2wf0pq">📋</button></b></div>
+          <div class="api-row" data-page-node-id="Z1HqnMIxE07LdayTENbJn9"><span data-page-node-id="CabnCGxznRZisKipMpz2Nw" data-i18n="api.proto">协议</span><b data-page-node-id="iuspNrQu5oWYctNVCk2XEy">OpenAI 兼容 · /v1/models · /v1/chat/completions（支持 SSE 流式）</b></div>
+          <div class="api-row" data-page-node-id="v2EY9o8cAUHbfcB0v5N6eE"><span data-page-node-id="gFu13v0WBpR6LmlmzPhdvh" data-i18n="api.models">可用模型</span><b id="api-models" data-page-node-id="YQgK5EIqVkHF1l1ohZAgye">检测中…</b></div>
+          <div class="api-row" data-page-node-id="kSF0rLJgpwIveZyS1Ev3HX"><span data-page-node-id="NIvM65ZLMAaY75uxPC7rSC" data-i18n="api.auth">鉴权</span><b id="api-auth-state" data-page-node-id="rccekMAphSZoH0RFyLnFqE">检测中…</b></div>
+          <div class="api-note" data-page-node-id="XM1LyUoD5E106XdCDCIBtF">仅本机可访问（127.0.0.1）。如需局域网内其他设备访问，请以 <code data-page-node-id="AkIzWu9qCyJ9ICOTwEYcvP">--host 0.0.0.0</code> 启动后端。</div>
         </div>
 
-        <div class="dep-card">
-          <div class="dep-card-title">🔑 API Key 管理</div>
-          <p class="dep-tip">配置密钥后，调用需带 <code>Authorization: Bearer &lt;Key&gt;</code>；清空密钥则本机免鉴权。</p>
-          <input class="api-key-input" id="api-key-input" type="text" placeholder="留空后保存 = 清除密钥（免鉴权）" autocomplete="off" spellcheck="false"/>
-          <div class="api-key-ops">
-            <button class="dep-mid-btn" id="api-key-gen" style="margin:0">🎲 生成随机 Key</button>
-            <button class="dep-big-btn" id="api-key-save" style="margin:0">💾 保存 Key</button>
-            <button class="dep-mid-btn" id="api-key-clear" style="margin:0">✖ 清除（免鉴权）</button>
+        <div class="dep-card" data-page-node-id="zet4OOB7LPjd5mgxvp23Fu">
+          <div class="dep-card-title" data-page-node-id="DkascykCJEnIEuluLwE2XG" data-i18n="api.keyTitle">🔑 API Key 管理</div>
+          <p class="dep-tip" data-page-node-id="k34uiXHafAhwzeBfXRnKeF">配置密钥后，调用需带 <code data-page-node-id="mjJ0Er6KUFsk2QeTF87qMI">Authorization: Bearer &lt;Key&gt;</code>；清空密钥则本机免鉴权。</p>
+          <input class="api-key-input" id="api-key-input" type="text" placeholder="留空后保存 = 清除密钥（免鉴权）" autocomplete="off" spellcheck="false" data-page-node-id="Z1bsIGzQjq7vocxWX7er5a"/>
+          <div class="api-key-ops" data-page-node-id="qgGpFG5TurA86Z09HaDVqV">
+            <button class="dep-mid-btn" id="api-key-gen" style="margin:0" data-page-node-id="35EKFhyYooN6A48LKOFPdp" data-i18n="api.genKey">🎲 生成随机 Key</button>
+            <button class="dep-big-btn" id="api-key-save" style="margin:0" data-page-node-id="q64ncN2vbAMD24Nc3qX03Q" data-i18n="api.saveKey">💾 保存 Key</button>
+            <button class="dep-mid-btn" id="api-key-clear" style="margin:0" data-page-node-id="fKyBKVINfsIWuUCIZRpXq6" data-i18n="api.clearKey">✖ 清除（免鉴权）</button>
           </div>
-          <div class="api-msg" id="api-msg"></div>
+          <div class="api-msg" id="api-msg" data-page-node-id="MBf1f1q6Z5hW2Io4ZkmzDd"></div>
         </div>
 
-        <div class="dep-card" style="grid-column:1/-1">
-          <div class="dep-card-title">🧩 其他 Agent 接入示例</div>
-          <div class="api-examples" id="api-examples"></div>
+        <div class="dep-card" style="grid-column:1/-1" data-page-node-id="1pqrBHqAaj8TeIg8Kv4zpC">
+          <div class="dep-card-title" data-page-node-id="AByLX9aQ5BfCzhKtFb8HvI" data-i18n="api.examples">🧩 其他 Agent 接入示例</div>
+          <div class="api-examples" id="api-examples" data-page-node-id="gYAGbP08zHKXujmL4MnN6A"></div>
         </div>
       </div>
     </div>
   </main>
 
   <!-- ===== 硬件监控视图 ===== -->
-  <main class="view" id="view-hardware">
-    <div class="hw-panel">
-      <button class="hw-back" id="hw-back" title="返回对话">← 返回对话</button>
-      <div class="hw-title"><span class="dot"></span>硬件实时监控<span class="hw-tag" id="hw-platform"></span></div>
-      <div class="hw-grid" id="hw-grid"></div>
-      <div class="cache-bar" id="cache-bar">
-        <span class="cache-title">🧠 缓存状态</span>
-        <span class="cache-chip" id="ck-status">—</span>
-        <span class="cache-chip" id="ck-rate">命中率 —</span>
-        <span class="cache-chip" id="ck-hit">命中 0</span>
-        <span class="cache-chip" id="ck-miss">未命中 0</span>
-        <span class="cache-chip" id="ck-total">条目 0</span>
+  <main class="view" id="view-hardware" data-page-node-id="PFQURmrDANCmmQIocL88gp">
+    <div class="hw-panel" data-page-node-id="iNsDJ2L0LuaeFAsdP6Xrqb">
+      <button class="hw-back" id="hw-back" title="返回对话" data-page-node-id="9pPRywM76ESnYDTfj6vJx6" data-i18n-title="back.title">← 返回对话</button>
+      <div class="hw-title" data-page-node-id="Zv4tRHkI6EQxSFeArOSxvn"><span class="dot" data-page-node-id="ThUr9rqocnUsFqAaRgh1nR"></span><span data-i18n="hw.title">硬件实时监控</span><span class="hw-tag" id="hw-platform" data-page-node-id="X32UhgYF6Bbk7qqGJR2euw"></span></div>
+      <div class="hw-grid" id="hw-grid" data-page-node-id="2n1whZKecp3OzeD4fCRSQR"></div>
+      <div class="cache-bar" id="cache-bar" data-page-node-id="cF2fFkPYJRs30k4AiOM0Ky">
+        <span class="cache-title" data-page-node-id="s7wOrKVU8nxJhzdi7TzbqW" data-i18n="hw.cache">🧠 缓存状态</span>
+        <span class="cache-chip" id="ck-status" data-page-node-id="NyPzBC5EDd0GBXs3Vf6j9g">—</span>
+        <span class="cache-chip" id="ck-rate" data-page-node-id="pk7OWyX12w1GjGsv1E98lH">命中率 —</span>
+        <span class="cache-chip" id="ck-hit" data-page-node-id="SNJHk4cQD3jE3Dc8dNe5bY">命中 0</span>
+        <span class="cache-chip" id="ck-miss" data-page-node-id="KYGS48Fgv9HmuPE8HcgaYr">未命中 0</span>
+        <span class="cache-chip" id="ck-total" data-page-node-id="Z9fQ84QzS19JyopcitccCV">条目 0</span>
       </div>
-      <div class="hw-trend-top">
-        <div class="hw-trend-title">负载趋势（最近 5 分钟）<span class="hw-note">同源指标重叠时微偏移以便区分</span></div>
-        <div class="hw-legend" id="hw-legend"></div>
+      <div class="hw-trend-top" data-page-node-id="IdtYKyx2nHBNZOzvq05S77">
+        <div class="hw-trend-title" data-page-node-id="FtIQbW1htGkCsVbzigi047"><span data-i18n="hw.trend">负载趋势（最近 5 分钟）</span><span class="hw-note" data-page-node-id="6ZGiwRB9BK3nWztbAbddJy">同源指标重叠时微偏移以便区分</span></div>
+        <div class="hw-legend" id="hw-legend" data-page-node-id="J3DkiCpqPRvtYCQGvCT3Gn"></div>
       </div>
-      <div class="hw-trend" id="hw-trend">
-        <div class="hw-ticks" aria-hidden="true"><span style="top:10px">100%</span><span style="top:41.5px">75%</span><span style="top:73px">50%</span><span style="top:104.5px">25%</span><span style="top:136px">0%</span></div>
-        <svg id="hw-trend-svg" viewBox="0 0 600 150" preserveAspectRatio="none"></svg>
+      <div class="hw-trend" id="hw-trend" data-page-node-id="3RrHAxFBwgGWJjDdYPA5lL">
+        <div class="hw-ticks" aria-hidden="true" data-page-node-id="IxEkivG0FshbfHkMgIyhUT"><span style="top:10px" data-page-node-id="QJCN3rsc5zNGH9aqApIECA">100%</span><span style="top:41.5px" data-page-node-id="kfkokdYFaBTcphcNegpr3U">75%</span><span style="top:73px" data-page-node-id="3DPOyhueY6Ad9HFU2HNsFB">50%</span><span style="top:104.5px" data-page-node-id="ZAzmoekGsvfm1gAo8ropEy">25%</span><span style="top:136px" data-page-node-id="soPBxwgFmhtG0vDHguXV5T">0%</span></div>
+        <svg id="hw-trend-svg" viewBox="0 0 600 150" preserveAspectRatio="none" data-page-node-id="IaXodHL9YYy3pkGgYmWK8C"></svg>
       </div>
-      <div class="hw-sub" id="hw-sub"></div>
-      <div class="hw-foot">数据每秒刷新 · Apple Silicon 统一内存按「显存」语义展示</div>
+      <div class="hw-sub" id="hw-sub" data-page-node-id="tb743VfyHCDI4odELvXsUS"></div>
+      <div class="hw-foot" data-page-node-id="M9WWPRIDteYlcFpghSQjm6" data-i18n="hw.foot">数据每秒刷新 · Apple Silicon 统一内存按「显存」语义展示</div>
     </div>
   </main>
 
   <!-- ===== 应用设置视图 ===== -->
-  <main class="view" id="view-settings">
-    <div class="set-panel">
-      <div class="set-head">
-        <button class="hw-back" id="set-back" title="返回对话">← 返回对话</button>
-        <button class="gear-btn" id="set-refresh" title="刷新设置">↻</button>
+  <main class="view" id="view-settings" data-page-node-id="chjWeTC7a8vaYIVw7SCO8r">
+    <div class="set-panel" data-page-node-id="GUEYeNNWkBAuRDp0FKqLtt">
+      <div class="set-head" data-page-node-id="FvOFA61vWg6KW6LSMeXpXQ">
+        <button class="hw-back" id="set-back" title="返回对话" data-page-node-id="YLL7RcGsDxk2DELDAxCBz7" data-i18n-title="back.title">← 返回对话</button>
+        <button class="gear-btn" id="set-refresh" title="刷新设置" data-page-node-id="VLRxG2tC7aBHPHVY8qSMye">↻</button>
       </div>
-      <div class="set-title">🛠 应用设置</div>
-      <div class="set-sub" id="set-sub"></div>
-      <div class="set-msg" id="set-msg"></div>
-      <div class="set-body" id="set-body"></div>
+      <div class="set-title" data-page-node-id="PGkbm0a9zL9TdxSjaD4nXo" data-i18n="set.title">🛠 应用设置</div>
+      <div class="set-sub" id="set-sub" data-page-node-id="Gn2D4CAg6hdKSKQ7bDvB2X"></div>
+      <div class="set-msg" id="set-msg" data-page-node-id="ooQlhAdtsddBiamRJoc0Tj"></div>
+      <div class="set-body" id="set-body" data-page-node-id="777NYVBqqy3lN0HnOqk8BG"></div>
     </div>
   </main>
 
   <!-- ===== 工作流画布视图（前端入口已移除，交由 dsh；代码保留可回退） ===== -->
 
 </div>
+
+<script>
+/* ================= 多语言切换 (i18n) ================= */
+(function(){
+  'use strict';
+  var LANGS = [
+    { code:'zh', label:'中文',     flag:'🇨🇳' },
+    { code:'en', label:'English',  flag:'🇬🇧' },
+    { code:'ja', label:'日本語',    flag:'🇯🇵' },
+    { code:'ko', label:'한국어',     flag:'🇰🇷' },
+    { code:'fr', label:'Français', flag:'🇫🇷' },
+    { code:'de', label:'Deutsch',  flag:'🇩🇪' },
+    { code:'es', label:'Español',  flag:'🇪🇸' },
+    { code:'ru', label:'Русский',  flag:'🇷🇺' }
+  ];
+  // 短标签提供全 8 语；长句仅 zh+en，其余回退 en（避免机翻失真）
+  var I18N = {
+    'nav.chat':     {zh:'💬 对话', en:'💬 Chat', ja:'💬 チャット', ko:'💬 채팅', fr:'💬 Discussion', de:'💬 Chat', es:'💬 Chat', ru:'💬 Чат'},
+    'nav.deploy':   {zh:'📥 部署模型', en:'📥 Deploy', ja:'📥 デプロイ', ko:'📥 배포', fr:'📥 Déployer', de:'📥 Bereitstellen', es:'📥 Desplegar', ru:'📥 Развернуть'},
+    'nav.api':      {zh:'🔌 对外 API', en:'🔌 API', ja:'🔌 API', ko:'🔌 API', fr:'🔌 API', de:'🔌 API', es:'🔌 API', ru:'🔌 API'},
+    'nav.settings': {zh:'🛠 设置', en:'🛠 Settings', ja:'🛠 設定', ko:'🛠 설정', fr:'🛠 Paramètres', de:'🛠 Einstellungen', es:'🛠 Ajustes', ru:'🛠 Настройки'},
+    'hdr.wizard':   {zh:'部署向导', en:'Deploy wizard', ja:'デプロイウィザード', ko:'배포 마법사', fr:'Assistant de déploiement', de:'Bereitstellungs-Assistent', es:'Asistente de despliegue', ru:'Мастер развертывания'},
+    'hdr.theme':    {zh:'切换浅色 / 深色主题', en:'Toggle light / dark theme', ja:'ライト/ダークテーマ切替', ko:'라이트/다크 테마 전환', fr:'Basculer clair / sombre', de:'Hell-/Dunkelmodus umschalten', es:'Alternar claro / oscuro', ru:'Переключить светлую/тёмную тему'},
+    'hw.cpu':   {zh:'CPU', en:'CPU', ja:'CPU', ko:'CPU', fr:'CPU', de:'CPU', es:'CPU', ru:'CPU'},
+    'hw.mem':   {zh:'内存', en:'Memory', ja:'メモリ', ko:'메모리', fr:'Mémoire', de:'Speicher', es:'Memoria', ru:'Память'},
+    'hw.gpu':   {zh:'GPU', en:'GPU', ja:'GPU', ko:'GPU', fr:'GPU', de:'GPU', es:'GPU', ru:'GPU'},
+    'hw.vram':  {zh:'显存', en:'VRAM', ja:'VRAM', ko:'VRAM', fr:'VRAM', de:'VRAM', es:'VRAM', ru:'Видеопамять'},
+    'side.history': {zh:'历史会话', en:'History', ja:'履歴', ko:'기록', fr:'Historique', de:'Verlauf', es:'Historial', ru:'История'},
+    'side.search':  {zh:'🔍 搜索会话…', en:'🔍 Search chats…', ja:'🔍 チャットを検索…', ko:'🔍 대화 검색…', fr:'🔍 Rechercher…', de:'🔍 Suchen…', es:'🔍 Buscar…', ru:'🔍 Поиск…'},
+    'empty.title':  {zh:'开始对话', en:'Start Chat', ja:'チャットを開始', ko:'대화 시작', fr:'Démarrer', de:'Start', es:'Iniciar', ru:'Начать чат'},
+    'empty.desc':   {zh:'LocalFlow AI 将优先调用本地推理，智能拆分子任务，云端协作攻坚复杂问题。', en:'LocalFlow AI prefers local inference, splits subtasks intelligently, and teams up with the cloud for hard problems.'},
+    'empty.local':  {zh:'🚀 本地优先', en:'🚀 Local First', ja:'🚀 ローカル優先', ko:'🚀 로컬 우선', fr:'🚀 Local d\'abord', de:'🚀 Lokal zuerst', es:'🚀 Local primero', ru:'🚀 Локальный приоритет'},
+    'empty.multi':  {zh:'🧠 多模型协同', en:'🧠 Multi-Model', ja:'🧠 マルチモデル', ko:'🧠 멀티모델', fr:'🧠 Multi-modèle', de:'🧠 Multi-Modell', es:'🧠 Multi-modelo', ru:'🧠 Мультимодель'},
+    'empty.cache':  {zh:'⚡ 高命中缓存', en:'⚡ Smart Cache', ja:'⚡ スマートキャッシュ', ko:'⚡ 스마트 캐시', fr:'⚡ Cache intelligent', de:'⚡ Intelligenter Cache', es:'⚡ Caché inteligente', ru:'⚡ Умный кэш'},
+    'scroll.bottom':{zh:'↓ 回到底部', en:'↓ Back to bottom', ja:'↓ 一番下へ', ko:'↓ 맨 아래로', fr:'↓ Aller en bas', de:'↓ Nach unten', es:'↓ Ir abajo', ru:'↓ Вниз'},
+    'scroll.bottomTitle':{zh:'回到底部', en:'Back to bottom', ja:'一番下へ', ko:'맨 아래로', fr:'Aller en bas', de:'Nach unten', es:'Ir abajo', ru:'Вниз'},
+    'multi.all':    {zh:'全选', en:'Select all', ja:'すべて選択', ko:'전체 선택', fr:'Tout sélectionner', de:'Alle auswählen', es:'Seleccionar todo', ru:'Выбрать все'},
+    'multi.export': {zh:'导出 Markdown', en:'Export Markdown', ja:'Markdown 書き出し', ko:'Markdown 내보내기', fr:'Exporter Markdown', de:'Markdown exportieren', es:'Exportar Markdown', ru:'Экспорт Markdown'},
+    'multi.cancel': {zh:'取消', en:'Cancel', ja:'キャンセル', ko:'취소', fr:'Annuler', de:'Abbrechen', es:'Cancelar', ru:'Отмена'},
+    'ctx.label':    {zh:'上下文占用', en:'Context usage', ja:'コンテキスト使用量', ko:'컨텍스트 사용량', fr:'Contexte utilisé', de:'Kontext-Auslastung', es:'Uso de contexto', ru:'Использование контекста'},
+    'ctx.local':    {zh:'⚙ 本地', en:'⚙ Local', ja:'⚙ ローカル', ko:'⚙ 로컬', fr:'⚙ Local', de:'⚙ Lokal', es:'⚙ Local', ru:'⚙ Локально'},
+    'ctx.localTitle':{zh:'使用本地 Ollama 模型', en:'Use local Ollama model', ja:'ローカル Ollama モデルを使用', ko:'로컬 Ollama 모델 사용', fr:'Utiliser le modèle Ollama local', de:'Lokales Ollama-Modell verwenden', es:'Usar modelo Ollama local', ru:'Использовать локальную модель Ollama'},
+    'ctx.cloud':    {zh:'☁ 云端', en:'☁ Cloud', ja:'☁ クラウド', ko:'☁ 클라우드', fr:'☁ Cloud', de:'☁ Cloud', es:'☁ Nube', ru:'☁ Облако'},
+    'ctx.cloudTitle':{zh:'使用云端 API 模型', en:'Use cloud API model', ja:'クラウド API モデルを使用', ko:'클라우드 API 모델 사용', fr:'Utiliser le modèle API cloud', de:'Cloud-API-Modell verwenden', es:'Usar modelo de API en la nube', ru:'Использовать облачную API-модель'},
+    'input.placeholder':{zh:'输入消息，Enter 发送，Shift＋Enter 换行…', en:'Type a message, Enter to send, Shift+Enter for newline…', ja:'メッセージを入力、Enter で送信、Shift+Enter で改行…', ko:'메시지 입력, Enter 전송, Shift+Enter 줄바꿈…', fr:'Tapez un message, Entrée pour envoyer, Maj+Entrée pour la ligne suivante…', de:'Nachricht eingeben, Enter senden, Shift+Enter neue Zeile…', es:'Escribe un mensaje, Enter para enviar, Shift+Enter salto de línea…', ru:'Введите сообщение, Enter — отправить, Shift+Enter — новая строка…'},
+    'input.voice':  {zh:'语音输入（需浏览器麦克风授权）', en:'Voice input (mic permission required)', ja:'音声入力（マイク権限が必要）', ko:'음성 입력(마이크 권한 필요)', fr:'Saisie vocale (micro requis)', de:'Spracheingabe (Mikrofon nötig)', es:'Entrada de voz (requiere micrófono)', ru:'Голосовой ввод (нужен микрофон)'},
+    'input.attach': {zh:'添加文件给 AI 查看（支持文本类文件）', en:'Attach files for AI (text files supported)', ja:'AI 向けファイル添付（テキスト系）', ko:'AI용 파일 첨부(텍스트 파일 지원)', fr:'Joindre des fichiers (texte)', de:'Dateien anhängen (Text)', es:'Adjuntar archivos (texto)', ru:'Прикрепить файлы (текст)'},
+    'input.send':   {zh:'发送', en:'Send', ja:'送信', ko:'보내기', fr:'Envoyer', de:'Senden', es:'Enviar', ru:'Отправить'},
+    'back.title':   {zh:'返回对话', en:'Back to chat', ja:'チャットに戻る', ko:'대화로 돌아가기', fr:'Retour au chat', de:'Zurück zum Chat', es:'Volver al chat', ru:'Назад к чату'},
+    'dep.title':    {zh:'部署本地模型', en:'Deploy Local Model', ja:'ローカルモデルのデプロイ', ko:'로컬 모델 배포', fr:'Déployer un modèle local', de:'Lokales Modell bereitstellen', es:'Desplegar modelo local', ru:'Развернуть локальную модель'},
+    'dep.sub':      {zh:'检测设备 → 选择模型 → 一键下载，即可在本机运行大模型', en:'Detect device → pick a model → one-click download to run LLMs on this machine'},
+    'dep.env':      {zh:'🖥 设备与运行环境', en:'🖥 Device & Runtime', ja:'🖥 デバイスと実行環境', ko:'🖥 장치 및 실행 환경', fr:'🖥 Appareil et environnement', de:'🖥 Gerät & Laufzeit', es:'🖥 Dispositivo y entorno', ru:'🖥 Устройство и среда'},
+    'dep.env.platform': {zh:'平台', en:'Platform', ja:'プラットフォーム', ko:'플랫폼', fr:'Plateforme', de:'Plattform', es:'Plataforma', ru:'Платформа'},
+    'dep.env.cpumem':   {zh:'CPU / 内存', en:'CPU / Memory', ja:'CPU / メモリ', ko:'CPU / 메모리', fr:'CPU / Mémoire', de:'CPU / Speicher', es:'CPU / Memoria', ru:'CPU / Память'},
+    'dep.env.gpu':      {zh:'GPU', en:'GPU', ja:'GPU', ko:'GPU', fr:'GPU', de:'GPU', es:'GPU', ru:'GPU'},
+    'dep.env.ollama':   {zh:'Ollama 服务', en:'Ollama service', ja:'Ollama サービス', ko:'Ollama 서비스', fr:'Service Ollama', de:'Ollama-Dienst', es:'Servicio Ollama', ru:'Служба Ollama'},
+    'dep.env.installed':{zh:'已装本地模型', en:'Installed local models', ja:'インストール済みローカルモデル', ko:'설치된 로컬 모델', fr:'Modèles locaux installés', de:'Installierte lokale Modelle', es:'Modelos locales instalados', ru:'Установленные локальные модели'},
+    'dep.env.suggest':  {zh:'本地容量建议', en:'Local capacity suggestion', ja:'ローカル容量の目安', ko:'로컬 용량 권장', fr:'Recommandation de capacité', de:'Kapazitätsempfehlung', es:'Sugerencia de capacidad', ru:'Рекомендация по ёмкости'},
+    'dep.start':    {zh:'🚀 开始部署', en:'🚀 Start Deploy', ja:'🚀 デプロイ開始', ko:'🚀 배포 시작', fr:'🚀 Démarrer', de:'🚀 Start', es:'🚀 Iniciar', ru:'🚀 Начать'},
+    'dep.openWizard':  {zh:'⬇ 打开部署向导', en:'⬇ Open Deploy Wizard', ja:'⬇ デプロイウィザードを開く', ko:'⬇ 배포 마법사 열기', fr:'⬇ Ouvrir l\'assistant', de:'⬇ Assistent öffnen', es:'⬇ Abrir asistente', ru:'⬇ Открыть мастер'},
+    'dep.openCloud':   {zh:'☁ 绑定云端 API（下载期间也能先聊）', en:'☁ Bind cloud API (chat while downloading)', ja:'☁ クラウド API を紐付け', ko:'☁ 클라우드 API 연결', fr:'☁ Lier l\'API cloud', de:'☁ Cloud-API binden', es:'☁ Vincular API en la nube', ru:'☁ Привязать облачный API'},
+    'api.title':    {zh:'对外 API', en:'External API', ja:'対外 API', ko:'외부 API', fr:'API externe', de:'Externe API', es:'API externa', ru:'Внешний API'},
+    'api.sub':      {zh:'通过 OpenAI 兼容接口，让其他 Agent / 工具直接使用本地部署的模型', en:'Expose local models to other agents / tools via an OpenAI-compatible API'},
+    'api.info':     {zh:'🔌 接入信息', en:'🔌 Connection Info', ja:'🔌 接続情報', ko:'🔌 접속 정보', fr:'🔌 Informations', de:'🔌 Verbindungsinfo', es:'🔌 Información', ru:'🔌 Сведения'},
+    'api.addr':     {zh:'接口地址', en:'Endpoint', ja:'エンドポイント', ko:'엔드포인트', fr:'Adresse', de:'Endpunkt', es:'Dirección', ru:'Адрес'},
+    'api.proto':    {zh:'协议', en:'Protocol', ja:'プロトコル', ko:'프로토콜', fr:'Protocole', de:'Protokoll', es:'Protocolo', ru:'Протокол'},
+    'api.models':   {zh:'可用模型', en:'Available models', ja:'利用可能なモデル', ko:'사용 가능 모델', fr:'Modèles disponibles', de:'Verfügbare Modelle', es:'Modelos disponibles', ru:'Доступные модели'},
+    'api.auth':     {zh:'鉴权', en:'Auth', ja:'認証', ko:'인증', fr:'Auth', de:'Auth', es:'Auth', ru:'Аутентиф.'},
+    'api.keyTitle': {zh:'🔑 API Key 管理', en:'🔑 API Key Management', ja:'🔑 API キー管理', ko:'🔑 API 키 관리', fr:'🔑 Gestion des clés', de:'🔑 Key-Verwaltung', es:'🔑 Gestión de claves', ru:'🔑 Управление ключами'},
+    'api.genKey':   {zh:'🎲 生成随机 Key', en:'🎲 Generate Random Key', ja:'🎲 ランダムキー生成', ko:'🎲 무작위 키 생성', fr:'🎲 Générer une clé', de:'🎲 Zufälligen Key', es:'🎲 Generar clave', ru:'🎲 Создать ключ'},
+    'api.saveKey':  {zh:'💾 保存 Key', en:'💾 Save Key', ja:'💾 キーを保存', ko:'💾 키 저장', fr:'💾 Enregistrer', de:'💾 Key speichern', es:'💾 Guardar', ru:'💾 Сохранить'},
+    'api.clearKey': {zh:'✖ 清除（免鉴权）', en:'✖ Clear (no auth)', ja:'✖ クリア（認証不要）', ko:'✖ 지우기(인증 없음)', fr:'✖ Effacer (sans auth)', de:'✖ Löschen (ohne Auth)', es:'✖ Borrar (sin auth)', ru:'✖ Очистить (без auth)'},
+    'api.examples': {zh:'🧩 其他 Agent 接入示例', en:'🧩 Examples for other agents', ja:'🧩 他 Agent の接続例', ko:'🧩 다른 Agent 연동 예제', fr:'🧩 Exemples d\'intégration', de:'🧩 Beispiele', es:'🧩 Ejemplos', ru:'🧩 Примеры'},
+    'hw.title':     {zh:'硬件实时监控', en:'Hardware Monitor', ja:'ハードウェア監視', ko:'하드웨어 모니터', fr:'Surveillance matérielle', de:'Hardware-Überwachung', es:'Monitor de hardware', ru:'Мониторинг оборудования'},
+    'hw.cache':     {zh:'🧠 缓存状态', en:'🧠 Cache Status', ja:'🧠 キャッシュ状態', ko:'🧠 캐시 상태', fr:'🧠 État du cache', de:'🧠 Cache-Status', es:'🧠 Estado de caché', ru:'🧠 Состояние кэша'},
+    'hw.trend':     {zh:'负载趋势（最近 5 分钟）', en:'Load trend (last 5 min)', ja:'負荷トレンド（直近5分）', ko:'부하 추이(최근 5분)', fr:'Tendance de charge (5 min)', de:'Last-Trend (5 Min)', es:'Tendencia de carga (5 min)', ru:'Тренд нагрузки (5 мин)'},
+    'hw.foot':      {zh:'数据每秒刷新 · Apple Silicon 统一内存按「显存」语义展示', en:'Refreshed every second · Apple Silicon unified memory shown as "VRAM"'},
+    'set.title':    {zh:'🛠 应用设置', en:'🛠 Settings', ja:'🛠 設定', ko:'🛠 설정', fr:'🛠 Paramètres', de:'🛠 Einstellungen', es:'🛠 Ajustes', ru:'🛠 Настройки'},
+    'wiz.title':    {zh:'🚀 初始化部署向导', en:'🚀 Setup Wizard', ja:'🚀 セットアップウィザード', ko:'🚀 설정 마법사', fr:'🚀 Assistant de configuration', de:'🚀 Einrichtungs-Assistent', es:'🚀 Asistente de configuración', ru:'🚀 Мастер настройки'},
+    'wiz.step1':    {zh:'环境检测', en:'Environment', ja:'環境検出', ko:'환경 감지', fr:'Environnement', de:'Umgebung', es:'Entorno', ru:'Окружение'},
+    'wiz.step2':    {zh:'选择模型', en:'Choose model', ja:'モデル選択', ko:'모델 선택', fr:'Choisir le modèle', de:'Modell wählen', es:'Elegir modelo', ru:'Выбор модели'},
+    'wiz.step3':    {zh:'准备就绪', en:'Ready', ja:'準備完了', ko:'준비 완료', fr:'Prêt', de:'Bereit', es:'Listo', ru:'Готово'},
+    'wiz.loading':  {zh:'正在检测您的设备…', en:'Detecting your device…', ja:'デバイスを検出中…', ko:'장치 감지 중…', fr:'Détection de l\'appareil…', de:'Gerät wird erkannt…', es:'Detectando dispositivo…', ru:'Обнаружение устройства…'}
+  };
+  function curLang(){ try{ return localStorage.getItem('localflow_lang') || 'zh'; }catch(e){ return 'zh'; } }
+  function t(key){
+    var e = I18N[key];
+    if(!e) return key;
+    var l = curLang();
+    return e[l] || e.en || e.zh || key;
+  }
+  function applyI18n(root){
+    root = root || document;
+    root.querySelectorAll('[data-i18n]').forEach(function(el){ el.textContent = t(el.getAttribute('data-i18n')); });
+    root.querySelectorAll('[data-i18n-title]').forEach(function(el){ el.setAttribute('title', t(el.getAttribute('data-i18n-title'))); });
+    root.querySelectorAll('[data-i18n-placeholder]').forEach(function(el){ el.setAttribute('placeholder', t(el.getAttribute('data-i18n-placeholder'))); });
+  }
+  function setLang(code){
+    try{ localStorage.setItem('localflow_lang', code); }catch(e){}
+    document.documentElement.lang = code;
+    applyI18n();
+    buildSwitcher();
+  }
+  function buildSwitcher(){
+    var old = document.getElementById('lang-fab');
+    if(old) old.remove();
+    var fab = document.createElement('div');
+    fab.id = 'lang-fab';
+    fab.innerHTML = '<button class="lang-fab-btn" title="Language / 语言 / 言語">🌐</button>'+
+                    '<div class="lang-pop" hidden></div>';
+    document.body.appendChild(fab);
+    var btn = fab.querySelector('.lang-fab-btn');
+    var pop = fab.querySelector('.lang-pop');
+    var cur = curLang();
+    LANGS.forEach(function(L){
+      var row = document.createElement('div');
+      row.className = 'lang-row' + (L.code===cur ? ' active' : '');
+      row.setAttribute('data-code', L.code);
+      row.innerHTML = '<span class="lang-flag">'+L.flag+'</span>'+
+                      '<span class="lang-name">'+L.label+'</span>'+
+                      (L.code===cur ? '<span class="lang-check">✓</span>' : '');
+      row.addEventListener('click', function(){ setLang(L.code); });
+      pop.appendChild(row);
+    });
+    btn.addEventListener('click', function(e){ e.stopPropagation(); pop.hidden = !pop.hidden; });
+    document.addEventListener('click', function(e){ if(!fab.contains(e.target)) pop.hidden = true; });
+  }
+  function injectStyle(){
+    var s = document.createElement('style');
+    s.textContent =
+      '#lang-fab{position:fixed;right:16px;bottom:16px;z-index:99999;font-family:inherit;}'+
+      '.lang-fab-btn{width:46px;height:46px;border-radius:50%;border:none;cursor:pointer;'+
+        'background:linear-gradient(135deg,#6d8bff,#9b6dff);color:#fff;font-size:20px;'+
+        'box-shadow:0 4px 14px rgba(0,0,0,.28);display:flex;align-items:center;justify-content:center;transition:transform .15s;}'+
+      '.lang-fab-btn:hover{transform:scale(1.08);}'+
+      '.lang-pop{position:absolute;right:0;bottom:56px;width:188px;background:var(--panel,#fff);'+
+        'border:1px solid var(--border,#e3e6ef);border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.22);'+
+        'padding:6px;max-height:320px;overflow:auto;}'+
+      '.lang-row{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--text,#222);}'+
+      '.lang-row:hover{background:var(--hover,#f0f2f8);}'+
+      '.lang-row.active{background:rgba(109,139,255,.16);font-weight:600;}'+
+      '.lang-flag{font-size:16px;}'+
+      '.lang-name{flex:1;}'+
+      '.lang-check{color:#6d8bff;}';
+    document.head.appendChild(s);
+  }
+  function boot(){ injectStyle(); applyI18n(); buildSwitcher(); }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+  setTimeout(applyI18n, 500);
+  window.applyI18n = applyI18n;
+  window.setLang = setLang;
+})();
+</script>
 
 <script>
 'use strict';
@@ -5392,28 +5546,28 @@ const WorkSpace = {
 <!-- ===== 右侧信息面板（固定展示页：项目文件 + Agent 运行）—— 前端入口已移除，交由 dsh；代码保留可回退 ===== -->
 
 <!-- ===== 部署向导模态 ===== -->
-<div class="modal-mask" id="wizard-modal" hidden>
-  <div class="modal">
-    <div class="modal-head">
-      <div class="modal-title">🚀 初始化部署向导</div>
-      <button class="modal-close" id="wizard-close">×</button>
+<div class="modal-mask" id="wizard-modal" hidden data-page-node-id="2VXKhwXClE3A1GBRgCfxyN">
+  <div class="modal" data-page-node-id="A3qzMuW6WW15NbSLBjDg3M">
+    <div class="modal-head" data-page-node-id="GP28ZRCG1HR5LAAVBhpVX1">
+      <div class="modal-title" data-page-node-id="Xz7z41KcyaaVKCAXDc0Qlb" data-i18n="wiz.title">🚀 初始化部署向导</div>
+      <button class="modal-close" id="wizard-close" data-page-node-id="hH8SzwuBAIff5UPtCdFypy">×</button>
     </div>
-    <div class="wz-steps">
-      <div class="wz-step active" data-step="0"><b>1</b><span>环境检测</span></div>
-      <div class="wz-step" data-step="1"><b>2</b><span>选择模型</span></div>
-      <div class="wz-step" data-step="2"><b>3</b><span>准备就绪</span></div>
+    <div class="wz-steps" data-page-node-id="fMH0kO2xgcGBO6J0tnmAy3">
+      <div class="wz-step active" data-step="0" data-page-node-id="VgZ1dK1kdPcHLrAWhF4pZM"><b data-page-node-id="Um9btNnumYGvlixyfrxPs4">1</b><span data-page-node-id="75ZlmYZP5N6IwCKDySeh53" data-i18n="wiz.step1">环境检测</span></div>
+      <div class="wz-step" data-step="1" data-page-node-id="cjADrUuAX5AdX5RZRMnh20"><b data-page-node-id="rnrEuhBPorYnpPZN8bvdU8">2</b><span data-page-node-id="tLv8QyIEh1Xt2XqDDWOLHZ" data-i18n="wiz.step2">选择模型</span></div>
+      <div class="wz-step" data-step="2" data-page-node-id="GM4DtLKmQwEGIb4riOy2V5"><b data-page-node-id="qW0MwqlE3WJBbYh5Rs6A7F">3</b><span data-page-node-id="h4ZHhbFaHqwDoGNO2tIq32" data-i18n="wiz.step3">准备就绪</span></div>
     </div>
-    <div class="modal-body" id="wizard-body">
-      <div class="wz-loading">正在检测您的设备…</div>
+    <div class="modal-body" id="wizard-body" data-page-node-id="qjvSSWoDYoZGL0G9qN7EoU">
+      <div class="wz-loading" data-page-node-id="3yoPH2F2osdldhqjSXv6ES" data-i18n="wiz.loading">正在检测您的设备…</div>
     </div>
-    <div class="modal-foot" id="wizard-foot"></div>
+    <div class="modal-foot" id="wizard-foot" data-page-node-id="w205ACGP4aKmT6cGCCf4rP"></div>
   </div>
 </div>
 
 <!-- ===== 云端模型浮层 ===== -->
-<div class="cloud-sheet" id="cloud-sheet">
-  <div class="cs-head">☁ 云端模型 <button class="cs-x" onclick="closeCloudSheet()">×</button></div>
-  <div id="cs-body"></div>
+<div class="cloud-sheet" id="cloud-sheet" data-page-node-id="zP1NCVDCPlZ19LG5K0Zeb4">
+  <div class="cs-head" data-page-node-id="npuJ510F646FNiBBI2VOfY">☁ 云端模型 <button class="cs-x" onclick="closeCloudSheet()" data-page-node-id="k3fsMVCPZ17keyomRBCAVO">×</button></div>
+  <div id="cs-body" data-page-node-id="ZA3ZFNT9YhE8xdCJ9e4meo"></div>
 </div>
 
 </body>
