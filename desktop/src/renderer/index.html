@@ -783,6 +783,7 @@ footer{margin-left:232px;padding:8px 20px;font-size:11px;color:var(--muted);back
 .dsh-install-spinner{display:inline-block;width:14px;height:14px;border:2px solid #cbd5e1;border-top-color:#2563eb;border-radius:50%;animation:dshspin .8s linear infinite;vertical-align:-2px;margin-right:6px;}
 @keyframes dshspin{to{transform:rotate(360deg);}}
 .dsh-guide-error{margin-top:10px;font-size:13px;color:#dc2626;line-height:1.6;}
+.dsh-launch-cmd{margin:8px 0 4px;padding:8px 10px;background:#0f172a;color:#e2e8f0;border-radius:8px;font-size:12px;white-space:pre-wrap;word-break:break-all;max-height:160px;overflow:auto;}
 /* 本地对话区历史/输入已由 dsh 承担，隐藏本地原有控件 */
 #view-chat .chat-scroll,
 #view-chat .input-bar,
@@ -905,6 +906,10 @@ footer{margin-left:232px;padding:8px 20px;font-size:11px;color:var(--muted);back
         <div id="dsh-manual-wrap">
           <div class="dsh-guide-logo">L</div>
           <h2>对话引擎未连接</h2>
+          <!-- 启动诊断（dsh 崩溃时显示真实报错，便于排查/反馈） -->
+          <p class="dsh-guide-error" id="dsh-launch-error" hidden></p>
+          <pre id="dsh-launch-cmd" class="dsh-launch-cmd" hidden></pre>
+          <p class="dsh-guide-tip" id="dsh-launch-log" hidden></p>
           <p>LocalFlow 的对话与 Agent 能力由 <b>DeepSeek Harness（dsh）</b> 提供，当前未在
             <code id="dsh-host-hint">127.0.0.1:8080</code> 检测到 dsh 服务。</p>
           <ol class="dsh-guide-steps">
@@ -1143,6 +1148,9 @@ async function getApiBase(){
   const _installErr = document.getElementById('dsh-install-error');
   const _installRetry = document.getElementById('dsh-install-retry');
   const _retry = document.getElementById('dsh-retry');
+  const _launchErr = document.getElementById('dsh-launch-error');
+  const _launchCmd = document.getElementById('dsh-launch-cmd');
+  const _launchLog = document.getElementById('dsh-launch-log');
   if(_hint) _hint.textContent = _dshBase.replace(/^https?:\/\//, '');
 
   let _installTimer = null;
@@ -1211,6 +1219,37 @@ async function getApiBase(){
   if(window.localflow && window.localflow.onDshInstall){
     window.localflow.onDshInstall((s) => renderDshInstall(s));
   }
+  // 渲染 dsh 启动诊断：崩溃时把真实报错/退出码/命令/日志路径展示出来，便于排查与反馈
+  function renderDshLaunchError(e){
+    if(!e) return;
+    showManualCard();
+    if(_launchErr){
+      _launchErr.hidden = false;
+      let msg = '启动失败';
+      if(e.message) msg += '：' + e.message;
+      if(e.exitCode !== null && e.exitCode !== undefined) msg += '（退出码 ' + e.exitCode + '）';
+      else if(e.exitSignal) msg += '（信号 ' + e.exitSignal + '）';
+      _launchErr.textContent = msg;
+    }
+    if(_launchCmd){
+      if(e.command){ _launchCmd.hidden = false; _launchCmd.textContent = e.command; }
+      else { _launchCmd.hidden = true; }
+    }
+    if(_launchLog){
+      if(e.logPath){ _launchLog.hidden = false; _launchLog.textContent = '完整日志：' + e.logPath; }
+      else { _launchLog.hidden = true; }
+    }
+  }
+  if(window.localflow && window.localflow.onDshLaunchError){
+    window.localflow.onDshLaunchError((e) => renderDshLaunchError(e));
+  }
+  // 加载时取一次诊断快照，避免错过早期崩溃
+  if(window.localflow && window.localflow.getDshLaunchErrorState){
+    try{
+      const _lerr = await window.localflow.getDshLaunchErrorState();
+      if(_lerr) renderDshLaunchError(_lerr);
+    }catch(e){ /* ignore */ }
+  }
   // 加载时先取一次快照，避免错过主进程早期事件（时序竞态保护）
   if(window.localflow && window.localflow.getDshInstallState){
     try{
@@ -1229,13 +1268,23 @@ async function getApiBase(){
   // dsh 不可达 → 若安装卡仍可见则保持，否则显示手动引导；可达 → 加载 iframe
   if(window.localflow && window.localflow.onDshStatus){
     window.localflow.onDshStatus((up) => {
-      if(up){ clearInstallTimer(); showDshGuide(false); setDshSrc(); }
+      if(up){
+        clearInstallTimer(); showDshGuide(false); setDshSrc();
+        // 连上后清除启动诊断（若先前崩溃过）
+        if(_launchErr) _launchErr.hidden = true;
+        if(_launchCmd) _launchCmd.hidden = true;
+        if(_launchLog) _launchLog.hidden = true;
+      }
       else if(!(_installWrap && !_installWrap.hidden)){ showManualCard(); }
     });
   }
   // 初始状态：先加载一次（主进程会推送 dsh-status）
   if(_df) setDshSrc();
-  if(_retry) _retry.addEventListener('click', () => { setDshSrc(); showManualCard(); });
+  if(_retry) _retry.addEventListener('click', () => {
+    setDshSrc(); showManualCard();
+    // 若本地 dsh 已退出，尝试再拉起一次（崩溃诊断会通过 dsh-launch-error 回传）
+    if(window.localflow && window.localflow.relaunchDsh){ window.localflow.relaunchDsh(); }
+  });
   // ── 平移注意 ────────────────
   // Agent 功能 / 工作流 / 固定展示页已移除前端入口，交由 dsh 承担。
   // 保留代码以备回退：恢复入口时取消下列注释即可。

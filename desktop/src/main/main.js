@@ -346,6 +346,61 @@ function resolveDshLaunch() {
   return { cmd: 'dsh', args: ['--profile', 'web'], env };
 }
 
+/** dsh 运行日志路径（写入 userData，便于排查启动失败） */
+function dshLogPath() {
+  return path.join(app.getPath('userData'), 'dsh.log');
+}
+
+/**
+ * 最近一次 dsh 拉起的诊断信息。dsh 若是长驻 web 服务却在启动后退出，
+ * 几乎必然是崩溃（native 模块 ABI 不匹配、配置缺失、端口被占等）。
+ * 我们将 stderr 尾部 + 退出码 + 解析出的完整命令回传前端，让「对话引擎未连接」
+ * 从一团迷雾变成可复制粘贴的可诊断错误，而不是静默失败。
+ */
+let dshLaunchInfo = null;        // 当前/最近一次拉起的诊断
+let lastDshLaunchError = null;   // 供渲染进程加载时取快照
+let dshAppQuitting = false;      // 退出时不再把正常 kill 当作崩溃
+
+function dshLaunchShellCommand(info) {
+  if (!info) return '';
+  const home = info.env && info.env.DSH_HOME ? info.env.DSH_HOME : '';
+  const cmd = [info.cmd, ...(info.args || [])].map((a) => `"${a}"`).join(' ');
+  return home ? `DSH_HOME="${home}" ${cmd}` : cmd;
+}
+
+function appendDshLog(line) {
+  try {
+    fs.appendFileSync(dshLogPath(), line.endsWith('\n') ? line : line + '\n');
+  } catch (e) { /* 日志写入失败不阻塞主流程 */ }
+  if (dshLaunchInfo && dshLaunchInfo.stderrTail) {
+    dshLaunchInfo.stderrTail.push(line);
+    if (dshLaunchInfo.stderrTail.length > 60) dshLaunchInfo.stderrTail.shift();
+  }
+}
+
+function sendDshLaunchError() {
+  if (!dshLaunchInfo) return;
+  if (dshAppQuitting) return; // 应用退出导致的 kill 不算崩溃
+  const info = dshLaunchInfo;
+  const tail = info.stderrTail ? info.stderrTail.join('').trim() : '';
+  const message = (tail || info.lastError || '未捕获到输出（进程可能秒退）').slice(-2000);
+  lastDshLaunchError = {
+    status: 'launch-error',
+    message,
+    exitCode: info.exited ? info.exitCode : null,
+    exitSignal: info.exited ? info.exitSignal : null,
+    command: dshLaunchShellCommand(info),
+    cmd: info.cmd,
+    args: info.args,
+    env: { DSH_HOME: (info.env && info.env.DSH_HOME) || null },
+    logPath: dshLogPath(),
+    launchedAt: info.launchedAt,
+  };
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    try { mainWindow.webContents.send('dsh-launch-error', lastDshLaunchError); } catch (e) { /* ignore */ }
+  }
+}
+
 /** 若 dsh 未在运行则自动拉起（--profile web）。失败仅记录，不阻塞应用。 */
 function tryLaunchDsh() {
   if (dshProc) return;
@@ -354,25 +409,66 @@ function tryLaunchDsh() {
   isDshUp(800).then((up) => {
     if (up) return; // 已在运行，无需拉起
     const launch = resolveDshLaunch();
+    if (!launch || !launch.cmd) {
+      console.warn('[dsh] 无法解析本地 dsh 启动方式，交由引导卡提示手动启动');
+      return;
+    }
     try {
+      // 初始化本次拉起的诊断信息
+      dshLaunchInfo = {
+        cmd: launch.cmd,
+        args: launch.args,
+        env: launch.env,
+        launchedAt: Date.now(),
+        exited: false,
+        exitCode: null,
+        exitSignal: null,
+        lastError: null,
+        stderrTail: [],
+      };
+      appendDshLog(`\n===== dsh 拉起 @ ${new Date().toISOString()} =====`);
+      appendDshLog(`$ ${dshLaunchShellCommand(dshLaunchInfo)}`);
       dshProc = spawn(launch.cmd, launch.args, {
         stdio: ['ignore', 'pipe', 'pipe'],
         windowsHide: true,
         detached: false,
         env: launch.env,
       });
-      dshProc.stdout.on('data', (d) => process.stdout.write(`[dsh] ${d}`));
-      dshProc.stderr.on('data', (d) => process.stderr.write(`[dsh] ${d}`));
-      dshProc.on('error', (e) =>
-        console.warn('[dsh] 自动拉起失败（可忽略，引导卡会提示手动启动）：', e.message));
-      dshProc.on('exit', (code) => {
-        console.log(`[dsh] 退出 code=${code}`);
+      dshProc.stdout.on('data', (d) => {
+        const s = d.toString();
+        process.stdout.write(`[dsh] ${s}`);
+        appendDshLog('[out] ' + s.replace(/\n$/, ''));
+      });
+      dshProc.stderr.on('data', (d) => {
+        const s = d.toString();
+        process.stderr.write(`[dsh] ${s}`);
+        appendDshLog('[err] ' + s.replace(/\n$/, ''));
+        if (dshLaunchInfo) dshLaunchInfo.lastError = s.trim().slice(-500);
+      });
+      dshProc.on('error', (e) => {
+        console.warn('[dsh] 自动拉起失败（可忽略，引导卡会提示手动启动）：', e.message);
+        if (dshLaunchInfo) dshLaunchInfo.lastError = e.message;
+        appendDshLog('[error] ' + e.message);
+        sendDshLaunchError();
+      });
+      dshProc.on('exit', (code, signal) => {
+        console.log(`[dsh] 退出 code=${code} signal=${signal}`);
+        if (dshLaunchInfo) {
+          dshLaunchInfo.exited = true;
+          dshLaunchInfo.exitCode = code;
+          dshLaunchInfo.exitSignal = signal;
+        }
+        appendDshLog(`[exit] code=${code} signal=${signal}`);
         dshProc = null;
+        sendDshLaunchError(); // 长驻服务退出 = 崩溃，回传诊断
       });
       console.log('[dsh] 已尝试自动拉起：', launch.cmd, launch.args.join(' '),
         '| DSH_HOME=', launch.env.DSH_HOME);
     } catch (e) {
       console.warn('[dsh] 自动拉起异常：', e.message);
+      if (dshLaunchInfo) dshLaunchInfo.lastError = e.message;
+      appendDshLog('[exception] ' + e.message);
+      sendDshLaunchError();
     }
   });
 }
@@ -582,6 +678,7 @@ app.on('window-all-closed', () => {
 
 // 退出时清理子进程
 app.on('will-quit', () => {
+  dshAppQuitting = true; // 不再把退出期的正常 kill 当作崩溃上报
   if (backendProc && !backendProc.killed) {
     try { backendProc.kill(); } catch (e) { /* ignore */ }
   }
@@ -620,6 +717,24 @@ ipcMain.handle('app:dsh-install-retry', async () => {
   try { fs.rmSync(dshInstallDir(), { recursive: true, force: true }); } catch (e) { /* ignore */ }
   await ensureDsh(mainWindow);
   return lastDshInstallState;
+});
+
+ipcMain.handle('app:dsh-launch-error-state', () => {
+  // 渲染进程加载时取一次快照，避免错过早期崩溃诊断
+  return lastDshLaunchError;
+});
+
+ipcMain.handle('app:dsh-relaunch', async () => {
+  // 「重新连接」时若本地 dsh 已退出，再尝试拉起一次（用户主动触发，避免死循环：
+  // 仅在 dsh 当前未运行时拉起；若仍崩溃会再次回传诊断而非无限重启）
+  if (!app.isPackaged && process.env.LOCALFLOW_DSH_HOST) return { status: 'remote' };
+  dshLaunchInfo = null;
+  lastDshLaunchError = null;
+  // 先确认确实没在监听，避免重复拉起
+  const up = await isDshUp(800);
+  if (up) return { status: 'up' };
+  tryLaunchDsh();
+  return { status: 'relaunched' };
 });
 
 ipcMain.handle('app:ollama-status', async () => await isOllamaUp());

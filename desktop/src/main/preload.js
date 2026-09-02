@@ -11,4 +11,8 @@ contextBridge.exposeInMainWorld('localflow', {
   onDshInstall: (cb) => ipcRenderer.on('dsh-install', (_e, s) => cb(s)),
   getDshInstallState: () => ipcRenderer.invoke('app:dsh-install-state'),
   retryDshInstall: () => ipcRenderer.invoke('app:dsh-install-retry'),
+  // 对话引擎启动诊断（崩溃时回传 exitCode / stderr / 命令 / 日志路径）
+  onDshLaunchError: (cb) => ipcRenderer.on('dsh-launch-error', (_e, s) => cb(s)),
+  getDshLaunchErrorState: () => ipcRenderer.invoke('app:dsh-launch-error-state'),
+  relaunchDsh: () => ipcRenderer.invoke('app:dsh-relaunch'),
 });
