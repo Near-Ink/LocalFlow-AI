@@ -1,3 +1,8 @@
+# pnpm 工作区声明：dsh-poc 是 pnpm workspace（含本地 link 包 packages/*）。
+# packages 字段为必填，缺失会导致 `pnpm install` 报 "packages field missing or empty"。
+packages:
+  - 'packages/*'
+
 # pnpm 10+ 原生构建白名单：dsh 运行依赖 koffi / node-pty 等原生模块，
 # 必须允许其 postinstall 编译，否则 pnpm install 后运行时缺 native binding。
 allowBuilds:
