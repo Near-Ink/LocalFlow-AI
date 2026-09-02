@@ -124,6 +124,33 @@ function download(url, dest) {
   }
 }
 
+/**
+ * 在解压后的 Node 目录里定位可执行文件，兼容不同平台/版本 tarball 布局：
+ * 有的版本是 inner/node（含顶层 node 或 bin/node 软链），有的仅是 inner/bin/node；
+ * Windows 为 inner/node.exe。避免写死路径导致 ENOENT。
+ */
+function findNodeBin(innerDir, binName) {
+  const candidates = [path.join(innerDir, binName), path.join(innerDir, 'bin', binName)];
+  for (const c of candidates) {
+    try { if (fs.statSync(c).isFile()) return c; } catch (e) { /* ignore */ }
+  }
+  // 兜底：递归查找名为 binName 的普通文件
+  let found = null;
+  const walk = (d) => {
+    if (found) return;
+    let es; try { es = fs.readdirSync(d, { withFileTypes: true }); } catch (e) { return; }
+    for (const e of es) {
+      const p = path.join(d, e.name);
+      try {
+        if (e.isDirectory()) walk(p);
+        else if (e.name === binName && fs.statSync(p).isFile()) { found = p; return; }
+      } catch (err) { /* ignore */ }
+    }
+  };
+  try { walk(innerDir); } catch (e) { /* ignore */ }
+  return found;
+}
+
 /** 按平台/架构下载并解包便携式 Node 到 nodeBundle/node（win 为 node.exe） */
 function bundleNode() {
   const plat = process.platform; // darwin | win32 | linux
@@ -156,7 +183,8 @@ function bundleNode() {
   if (extract === 'tar') {
     execSync(`tar -xzf "${archive}" -C "${tmp}"`, { stdio: 'inherit' });
     const inner = path.join(tmp, `node-v${v}-${plat === 'darwin' ? 'darwin' : 'linux'}-${arch}`);
-    const nodeBin = path.join(inner, binName);
+    const nodeBin = findNodeBin(inner, binName);
+    if (!nodeBin) throw new Error(`解压后未找到 Node 可执行文件（期望 ${binName}）于 ${inner}`);
     fs.copyFileSync(nodeBin, path.join(nodeBundle, binName));
     fs.chmodSync(path.join(nodeBundle, binName), 0o755);
   } else {
@@ -167,7 +195,9 @@ function bundleNode() {
       { stdio: 'inherit' }
     );
     const inner = path.join(dest, `node-v${v}-win-${arch}`);
-    fs.copyFileSync(path.join(inner, binName), path.join(nodeBundle, binName));
+    const nodeBin = findNodeBin(inner, binName);
+    if (!nodeBin) throw new Error(`解压后未找到 Node 可执行文件（期望 ${binName}）于 ${inner}`);
+    fs.copyFileSync(nodeBin, path.join(nodeBundle, binName));
   }
   fs.rmSync(tmp, { recursive: true, force: true });
   log('便携式 Node 已就位：', path.join(nodeBundle, binName));
