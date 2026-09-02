@@ -9,9 +9,12 @@ MVP 阶段先做基础采集，后续逐步增强。
 
 from __future__ import annotations
 
+import os
 import platform
+import shutil
+import subprocess
 import time
-from typing import List
+from typing import List, Optional
 
 from ..ports.hardware import GPUInfo, HardwareInfo, HardwareMonitor
 
@@ -37,7 +40,7 @@ class SystemHardwareMonitor(HardwareMonitor):
         except ImportError:
             pass
 
-        # NVIDIA
+        # NVIDIA：优先进程内 pynvml（NVML）；失败则退回 nvidia-smi CLI 兜底
         try:
             import pynvml
             self._pynvml = pynvml
@@ -45,11 +48,13 @@ class SystemHardwareMonitor(HardwareMonitor):
             self._nvidia_available = pynvml.nvmlDeviceGetCount() > 0
         except Exception:
             self._nvidia_available = False
+        # nvidia-smi 兜底路径：即便 NVML 进程内初始化失败（打包后端常见），
+        # 只要驱动在，nvidia-smi 仍能给出型号/显存/利用率，保证「检测得到设备」
+        self._nvidia_smi = self._find_nvidia_smi()
 
         # Apple Silicon
         if self._platform == "Darwin":
             try:
-                import subprocess
                 out = subprocess.run(
                     ["sysctl", "-n", "machdep.cpu.brand_string"],
                     capture_output=True, text=True, timeout=2,
@@ -59,15 +64,63 @@ class SystemHardwareMonitor(HardwareMonitor):
             except Exception:
                 pass
 
+    def _find_nvidia_smi(self) -> Optional[str]:
+        """定位 nvidia-smi 可执行文件（驱动自带，不依赖 NVML 进程内初始化）。"""
+        for cand in ("nvidia-smi", "nvidia-smi.exe"):
+            p = shutil.which(cand)
+            if p:
+                return p
+        # Windows 常见固定路径（PATH 未含时兜底）
+        if self._platform == "Windows":
+            base = os.environ.get("ProgramFiles") or r"C:\Program Files"
+            cand = os.path.join(base, "NVIDIA Corporation", "NVSMI", "nvidia-smi.exe")
+            if os.path.exists(cand):
+                return cand
+        return None
+
+    def _detect_nvidia_smi(self) -> List[GPUInfo]:
+        """用 nvidia-smi 解析 GPU 列表（pynvml 失败时的兜底，覆盖 Windows/Linux）。"""
+        if not self._nvidia_smi:
+            return []
+        try:
+            out = subprocess.run(
+                [self._nvidia_smi,
+                 "--query-gpu=index,name,memory.total,memory.used,utilization.gpu,temperature.gpu,power.draw",
+                 "--format=csv,noheader,nounits"],
+                capture_output=True, text=True, timeout=5,
+            ).stdout
+            gpus: List[GPUInfo] = []
+            for line in out.strip().splitlines():
+                parts = [p.strip() for p in line.split(",")]
+                if len(parts) < 7:
+                    continue
+                try:
+                    gpus.append(GPUInfo(
+                        index=int(parts[0]),
+                        name=parts[1],
+                        vram_total_mb=float(parts[2]),
+                        vram_used_mb=float(parts[3]),
+                        utilization=float(parts[4]),
+                        temperature=float(parts[5]),
+                        power_w=float(parts[6]),
+                    ))
+                except (ValueError, TypeError):
+                    continue
+            return gpus
+        except Exception:
+            return []
+
     def is_nvidia_available(self) -> bool:
-        return self._nvidia_available
+        # pynvml 进程内 NVML 可用，或 nvidia-smi CLI 兜底可用（驱动在即视为有 NVIDIA）
+        return self._nvidia_available or bool(self._nvidia_smi)
 
     def is_apple_silicon(self) -> bool:
         return self._apple_silicon
 
     async def detect_gpus(self) -> List[GPUInfo]:
-        gpus = []
+        # 1) 进程内 NVML（最实时：利用率/温度/功耗可逐秒拉取）
         if self._nvidia_available and self._pynvml:
+            gpus = []
             try:
                 count = self._pynvml.nvmlDeviceGetCount()
                 for i in range(count):
@@ -82,17 +135,23 @@ class SystemHardwareMonitor(HardwareMonitor):
                         vram_total_mb=mem_info.total / 1024 / 1024,
                         vram_used_mb=mem_info.used / 1024 / 1024,
                     ))
+                if gpus:
+                    return gpus
             except Exception:
                 pass
-        elif self._apple_silicon:
-            # Apple Silicon 统一内存：App 层面无独立显存，视总内存为共享显存池
-            gpus.append(GPUInfo(
+        # 2) nvidia-smi 兜底：NVML 初始化失败（打包后端常见）时仍能识别设备
+        smi = self._detect_nvidia_smi()
+        if smi:
+            return smi
+        # 3) Apple Silicon 统一内存：无独立显存，视总内存为共享显存池
+        if self._apple_silicon:
+            return [GPUInfo(
                 index=0,
                 name=self._apple_gpu_name(),
                 vram_total_mb=self._mem_total_mb(),
                 vram_used_mb=self._mem_used_mb(),
-            ))
-        return gpus
+            )]
+        return []
 
     def _chip_name(self) -> str:
         try:
