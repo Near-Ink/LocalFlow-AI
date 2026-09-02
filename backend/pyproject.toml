@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "localflow-ai"
-version = "0.1.0"
+version = "0.2.0"
 description = "LocalFlow AI — 本地 AI 桌面平台，复刻 DSH 架构的本地云端混合 AI 调度平台"
 readme = "README.md"
 requires-python = ">=3.10"
