@@ -8,9 +8,24 @@
 Electron 启动时通过 extraResources 携带并 spawn。
 """
 import os
+import sys
 from pathlib import Path
 
 from PyInstaller.utils.hooks import collect_all
+
+# Ensure the backend package is importable while this spec is evaluated, so that
+# collect_all("localflow") can resolve it. PyInstaller's `pathex` is used by its
+# own module finder but NOT by importlib (which collect_all relies on); without
+# this, the frozen bundle fails at runtime with "No module named localflow".
+# CI runs `pyinstaller` from backend/ without setting PYTHONPATH, so this is what
+# makes the build reproducible there. PyInstaller exec's this file without
+# __file__, so fall back to the CWD (backend/), which CI sets via working-directory.
+try:
+    _HERE = os.path.dirname(os.path.abspath(__file__))
+except NameError:
+    _HERE = os.path.abspath(".")
+if _HERE not in sys.path:
+    sys.path.insert(0, _HERE)
 
 # 动态导入较重的依赖：FastAPI / uvicorn / pydantic / psutil 的隐藏模块
 datas, binaries, hiddenimports = [], [], []
