@@ -8,5 +8,5 @@
 - db/        数据库与 schema
 """
 
-__version__ = "0.2.2"
+__version__ = "0.2.3"
 __app_name__ = "LocalFlow AI"

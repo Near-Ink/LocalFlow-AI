@@ -84,7 +84,7 @@ mac:
   # 购号并配好 CSC_LINK / Apple 凭据后，把下行改为真实证书名即可启用 Developer ID 签名+公证
   # （彻底消除“已损坏”弹窗与渲染崩溃）：
   # identity: "Developer ID Application: <在此填团队名> (<TEAM_ID>)"
-  identity: -
+  identity: "-"
 
 dmg:
   title: "${productName} ${version}"
