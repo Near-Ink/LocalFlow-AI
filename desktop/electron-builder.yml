@@ -78,9 +78,13 @@ mac:
   #   identity: "Developer ID Application: Zhang San (ABCDE12345)"
   # 当前（测试阶段）走 Gatekeeper 绕行方案、暂不购买 Apple Developer 账号，故 identity 设为 null：
   #   macOS 构建会跳过签名、正常产出未签名 dmg（Mac 用户靠 README 顶部「macOS 用户必读」绕行打开）。
-  # 等购买 Apple Developer 账号并配好 CSC_LINK / Apple 凭据后，取消下一行注释并填入真实证书名即可启用签名+公证。
+  # 测试阶段未购买 Apple Developer 账号：改用 ad-hoc 签名（-）让嵌套辅助进程带上
+  # entitlements（disable-library-validation / allow-jit 等），避免 macOS 26 上渲染/GPU
+  # 进程因库校验失败而崩溃（SIGABRT）。代价：Gatekeeper 仍会拦，需 xattr -rd 解除隔离。
+  # 购号并配好 CSC_LINK / Apple 凭据后，把下行改为真实证书名即可启用 Developer ID 签名+公证
+  # （彻底消除“已损坏”弹窗与渲染崩溃）：
   # identity: "Developer ID Application: <在此填团队名> (<TEAM_ID>)"
-  identity: null
+  identity: -
 
 dmg:
   title: "${productName} ${version}"
