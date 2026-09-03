@@ -486,12 +486,18 @@ function isDshUp(timeoutMs = 1500) {
 }
 
 /** 周期推送 dsh 可达状态给渲染进程，驱动「引导卡 / 对话页」切换 */
-async function monitorDsh(win) {
-  // 注：主进程已尝试自动拉起 dsh（tryLaunchDsh）；此处仅周期探测、不重复拉起
-  if (!win || win.isDestroyed()) return;
-  const up = await isDshUp();
-  try { win.webContents.send('dsh-status', up); } catch (e) { /* ignore */ }
-  setTimeout(() => monitorDsh(win), 5000);
+async function monitorDsh() {
+  // 始终引用全局 mainWindow：窗口可能被关掉后重建（关红叉不退出 app 再重开），
+  // 若捕获旧引用会在旧窗口销毁后停掉整个探测循环，导致新窗口永不收到「已连接」信号。
+  const win = mainWindow;
+  if (win && !win.isDestroyed()) {
+    try {
+      const up = await isDshUp();
+      win.webContents.send('dsh-status', up);
+    } catch (e) { /* ignore */ }
+  }
+  // 无论窗口是否存在都继续轮询；窗口重建后下一轮自动恢复推送，避免探测循环永久停止
+  setTimeout(() => monitorDsh(), 5000);
 }
 
 // ── Ollama（本地推理引擎）首启自检 ──────────────────────────────────────────
@@ -661,7 +667,7 @@ app.whenReady().then(async () => {
   await ensureDsh(mainWindow);
   tryLaunchDsh(); // 未运行时自动拉起对话引擎（失败则引导卡兜底）
   ensureOllama(); // 不阻塞：缺失则弹引导框，按平台分流安装
-  monitorDsh(mainWindow); // dsh 状态周期探测并推送给前端
+  monitorDsh(); // dsh 状态周期探测并推送给前端（内部引用全局 mainWindow，窗口重建后仍有效）
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
