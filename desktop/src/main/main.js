@@ -302,6 +302,56 @@ function copyDirSync(src, dest) {
 }
 
 /**
+ * 跟随软链复制单个路径（目录/文件）到目标，产出不含软链的真实副本。
+ * 用于把本地插件从模板（可能含 link: 软链）补全进用户 DSH_HOME。
+ */
+function copyPathFollow(src, dest) {
+  let st;
+  try { st = fs.lstatSync(src); } catch { return; }
+  if (st.isSymbolicLink()) {
+    let real;
+    try { real = fs.realpathSync(src); } catch { return; }
+    copyPathFollow(real, dest);
+    return;
+  }
+  if (st.isDirectory()) {
+    fs.mkdirSync(dest, { recursive: true });
+    for (const e of fs.readdirSync(src, { withFileTypes: true })) {
+      copyPathFollow(path.join(src, e.name), path.join(dest, e.name));
+    }
+  } else if (st.isFile()) {
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    fs.copyFileSync(src, dest);
+  }
+}
+
+/**
+ * 兜底补全本地插件 @local/file-workspace-preview 到用户 DSH_HOME。
+ * 背景：含 bug 的旧版（v0.2.3）打包时该插件未被物化进 bundle，且 ensureDshHome 仅在
+ * profiles/web 缺失时才整体重新播种，因此「已升级」用户（DSH_HOME 已存在但缺插件）不会触发
+ * 重新播种，导致 dsh 加载插件报 ERR_MODULE_NOT_FOUND 并退出、对话引擎起不来。
+ * 这里每次启动检测插件是否缺失，缺失则从模板（或开发态 dsh-poc/packages）补全为真实副本。
+ * 只补缺失项，不动既有 sessions/settings，安全可重复执行。
+ */
+function backfillLocalPlugin(home, tpl) {
+  const dst = path.join(home, 'profiles', 'web', 'node_modules', '@local', 'file-workspace-preview');
+  if (fs.existsSync(dst)) return;
+  let src = (tpl && fs.existsSync(tpl))
+    ? path.join(tpl, 'profiles', 'web', 'node_modules', '@local', 'file-workspace-preview')
+    : null;
+  if (!src || !fs.existsSync(src)) {
+    src = path.resolve(__dirname, '..', '..', '..', 'dsh-poc', 'packages', 'file-workspace-preview');
+  }
+  if (!fs.existsSync(src)) return;
+  try {
+    copyPathFollow(src, dst);
+    console.log('[dsh] 已补全本地插件到 DSH_HOME：', dst);
+  } catch (e) {
+    console.warn('[dsh] 补全本地插件失败：', e && e.message);
+  }
+}
+
+/**
  * dsh 的 home：$DSH_HOME/profiles 决定 --profile web 加载哪个 profile。
  * 必须可写（dsh 会写 sessions/storages/settings），故放在 userData 下而非只读的 app 包内；
  * 首次运行从内置模板（或开发态 dsh-poc/dsh-home）播种一份，保证开箱即用。
@@ -310,11 +360,11 @@ function copyDirSync(src, dest) {
  */
 function ensureDshHome() {
   const home = path.join(app.getPath('userData'), 'dsh-home');
+  const tpl = app.isPackaged
+    ? path.join(process.resourcesPath, 'dsh', 'dsh-home')
+    : path.resolve(__dirname, '..', '..', '..', 'dsh-poc', 'dsh-home');
   try {
     if (!fs.existsSync(path.join(home, 'profiles', 'web'))) {
-      const tpl = app.isPackaged
-        ? path.join(process.resourcesPath, 'dsh', 'dsh-home')
-        : path.resolve(__dirname, '..', '..', '..', 'dsh-poc', 'dsh-home');
       if (fs.existsSync(tpl)) {
         copyDirSync(tpl, home);
         console.log('[dsh] 已从模板播种 DSH_HOME：', home);
@@ -322,6 +372,8 @@ function ensureDshHome() {
         fs.mkdirSync(path.join(home, 'profiles', 'web'), { recursive: true });
       }
     }
+    // 兜底补全本地插件（修复旧版升级后缺插件的回归）
+    backfillLocalPlugin(home, tpl);
   } catch (e) {
     console.warn('[dsh] 准备 DSH_HOME 失败：', e.message);
   }
@@ -338,12 +390,12 @@ function resolveDshLaunch() {
   const env = { ...process.env, DSH_HOME: ensureDshHome() };
   const nodeBin = bundledNodePath();
   const entry = bundledDshEntry();
-  if (nodeBin && entry) return { cmd: nodeBin, args: [entry, '--profile', 'web'], env };
+  if (nodeBin && entry) return { cmd: nodeBin, args: [entry, '--profile', 'web', '--port', String(DSH_PORT)], env };
   if (!app.isPackaged) {
     const devBin = path.resolve(__dirname, '..', '..', '..', 'dsh-poc', 'node_modules', '.bin', 'dsh');
-    if (fs.existsSync(devBin)) return { cmd: devBin, args: ['--profile', 'web'], env };
+    if (fs.existsSync(devBin)) return { cmd: devBin, args: ['--profile', 'web', '--port', String(DSH_PORT)], env };
   }
-  return { cmd: 'dsh', args: ['--profile', 'web'], env };
+  return { cmd: 'dsh', args: ['--profile', 'web', '--port', String(DSH_PORT)], env };
 }
 
 /** dsh 运行日志路径（写入 userData，便于排查启动失败） */

@@ -203,6 +203,70 @@ function bundleNode() {
   log('便携式 Node 已就位：', path.join(nodeBundle, binName));
 }
 
+/**
+ * 把 dsh-poc/packages/* 下的本地工具插件（@local/*）物化进每个 profile 的
+ * node_modules/@local/（web、headless），作为 dsh 解析插件的真实副本。
+ *
+ * 背景：profiles/web、profiles/headless 的 package.json 用 `link:../../packages/<x>` 声明
+ * 这些本地插件，但 profile 目录不是 pnpm workspace 成员（pnpm-workspace.yaml 只含 packages/*），
+ * 也没有任何已安装包依赖它们 → pnpm 只生成了指向 dsh-poc/packages 的「软链」，并未把源码
+ * 物化进 bundle。而运行时主进程用 copyDirSync 播种 DSH_HOME 时会跳过软链，导致
+ * userData/dsh-home/profiles/.../node_modules/@local/ 为空 → dsh 加载插件报
+ * ERR_MODULE_NOT_FOUND 并退出（8080 起不来，app 显示报错）。
+ * 这里直接把插件源码以「真实副本」复制进 bundle（自包含、无开发者绝对路径），与 pnpm 是否
+ * 链接解耦，且能被 copyDirSync 正常播种。
+ *
+ * 关键落点：必须落在「每个 profile 自己」的 node_modules/@local/ 下，因为 dsh 从
+ * profiles/<profile>/node_modules 向上解析，只有 profiles/web/node_modules/@local/（或
+ * profiles/headless/node_modules/@local/）能被对应 profile 的 ESM bare import 解析。
+ * dsh-home 在首次启动会被播种到 userData/dsh-home，故放这里即可在部署后自然落到正确位置。
+ *
+ * 注：插件运行时依赖 @deepseek-ai/dsh-tools，已由上方 copyDirFollow(dsh-poc/dsh-home)
+ * 把 dsh-home 内既有的 @deepseek-ai/* 软链一并解引用为真实副本，无需此处重复处理。
+ */
+function bundleLocalPlugins() {
+  const srcPackages = path.join(dshPocDir, 'packages');
+  const profilesDir = path.join(dshBundle, 'dsh-home', 'profiles');
+  if (!fs.existsSync(srcPackages)) {
+    warn('未找到 dsh-poc/packages，跳过本地插件物化');
+    return;
+  }
+  if (!fs.existsSync(profilesDir)) {
+    warn('未找到 dsh-home/profiles，跳过本地插件物化');
+    return;
+  }
+  for (const profile of fs.readdirSync(profilesDir)) {
+    const profileNm = path.join(profilesDir, profile, 'node_modules');
+    if (!fs.existsSync(profileNm) || !fs.statSync(profileNm).isDirectory()) continue;
+    const destLocal = path.join(profileNm, '@local');
+    fs.mkdirSync(destLocal, { recursive: true });
+    for (const name of fs.readdirSync(srcPackages)) {
+      const srcPkg = path.join(srcPackages, name);
+      let st; try { st = fs.statSync(srcPkg); } catch { continue; }
+      if (!st.isDirectory() || !fs.existsSync(path.join(srcPkg, 'package.json'))) continue;
+      const destPkg = path.join(destLocal, name);
+      fs.rmSync(destPkg, { recursive: true, force: true });
+      // 只复制插件源码（index.js / cordis.patch.yml 等），其依赖 @deepseek-ai/dsh-tools
+      // 已在 dsh-home 内由 copyDirFollow 一并物化，无需打进插件内。
+      copyPluginTree(srcPkg, destPkg);
+      log('本地插件已物化：profiles/%s/node_modules/@local/%s', profile, name);
+    }
+  }
+}
+
+/** 复制插件目录但跳过其 node_modules（依赖交给顶层 hoist） */
+function copyPluginTree(src, dest) {
+  fs.mkdirSync(dest, { recursive: true });
+  const entries = fs.readdirSync(src, { withFileTypes: true });
+  for (const e of entries) {
+    if (e.name === 'node_modules') continue;
+    const s = path.join(src, e.name), d = path.join(dest, e.name);
+    if (e.isDirectory()) copyPluginTree(s, d);
+    else if (e.isSymbolicLink()) continue;            // 源码层不应有软链
+    else fs.copyFileSync(s, d);
+  }
+}
+
 function main() {
   if (!fs.existsSync(dshPocDir)) {
     throw new Error(`未找到 dsh-poc 目录：${dshPocDir}（请确认仓库结构）`);
@@ -213,10 +277,13 @@ function main() {
   log('跟随复制 node_modules（物化为自包含目录，可能耗时数十秒）…');
   copyDirFollow(path.join(dshPocDir, 'node_modules'), path.join(dshBundle, 'node_modules'));
 
-  log('跟随复制 dsh-home 模板…');
+  log('跟随复制 dsh-home 模板（含把 @deepseek-ai/* 软链解引用为真实副本）…');
   copyDirFollow(path.join(dshPocDir, 'dsh-home'), path.join(dshBundle, 'dsh-home'));
 
   patchDshShim();
+
+  log('物化本地插件（@local/*）到各 profile 的 node_modules/@local（真实副本，供 copyDirSync 播种）…');
+  bundleLocalPlugins();
 
   log('打包便携式 Node 运行时…');
   bundleNode();

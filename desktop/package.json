@@ -1,6 +1,6 @@
 {
   "name": "localflow-ai-desktop",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "LocalFlow AI — 本地 AI 桌面平台（Electron 客户端）",
   "main": "src/main/main.js",
   "scripts": {
