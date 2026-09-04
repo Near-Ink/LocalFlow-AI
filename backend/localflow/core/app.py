@@ -72,7 +72,7 @@ class LocalFlowApp:
     def __init__(self, config: Optional[AppConfig] = None):
         self.config = config or AppConfig()
         self.config.data_dir.mkdir(parents=True, exist_ok=True)
-        self.version = "0.2.4"
+        self.version = "0.2.5"
 
         # --- Settings 注册表（Agent / API 统一读写应用设置）---
         from .settings import register_core_settings

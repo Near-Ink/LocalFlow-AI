@@ -1373,20 +1373,47 @@ async function getApiBase(){
 
   let _installTimer = null;
   const clearInstallTimer = () => { if(_installTimer){ clearTimeout(_installTimer); _installTimer = null; } };
-  function setDshSrc(){
-    if(_df) _df.src = _dshBase + '/?v=' + Date.now();
+  // dsh 是启动较慢的 SPA。状态推送每 5 秒一次，若每次都重设 iframe.src，
+  // 页面会被无限重启、永远停在加载中（表现为「软件内一片空白」）。
+  // 因此只有「尚未加载成功」或「用户手动重连」时才真正刷新。
+  let _dshLoaded = false;
+  function setDshSrc(force){
+    if(!_df) return;
+    const base = _dshBase + '/';
+    const cur = typeof _df.src === 'string' ? _df.src : '';
+    if(!force && _dshLoaded && cur.indexOf(base) === 0) return; // 已加载且地址没变 → 不打断
+    _dshLoaded = false;
+    _df.src = base + '?v=' + Date.now();
   }
   function showDshGuide(show){
     if(_guide) _guide.hidden = !show;
   }
+  let _startingShown = false; // 当前展示的是「正在启动」卡（复用安装卡容器）
   function showInstallCard(){
+    _startingShown = false;
     if(_installWrap) _installWrap.hidden = false;
     if(_manualWrap) _manualWrap.hidden = true;
     showDshGuide(true);
   }
   function showManualCard(){
+    _startingShown = false;
     if(_installWrap) _installWrap.hidden = true;
     if(_manualWrap) _manualWrap.hidden = false;
+    showDshGuide(true);
+  }
+  // 应用已拉起 dsh、正在启动：给等待态，别一上来就报「未连接」
+  function showStartingCard(){
+    _startingShown = true;
+    if(_installWrap){
+      _installWrap.hidden = false;
+      if(_installTitle) _installTitle.textContent = '正在启动对话引擎…';
+      if(_installMsg) _installMsg.textContent = 'DeepSeek Harness 正在启动，首次加载通常需要十几秒，请稍候。';
+      if(_progressFill) _progressFill.style.width = '100%';
+      if(_progressPct) _progressPct.textContent = '…';
+      if(_installErr) _installErr.hidden = true;
+      if(_installRetry) _installRetry.hidden = true;
+    }
+    if(_manualWrap) _manualWrap.hidden = true;
     showDshGuide(true);
   }
 
@@ -1415,7 +1442,9 @@ async function getApiBase(){
       showDshGuide(true);
       // 已装好但 dsh 进程可能还在启动，给一个兜底：超时未连上则转手动引导
       clearInstallTimer();
-      _installTimer = setTimeout(() => { if(_installWrap && !_installWrap.hidden){ /* 仍显示则转手动 */ showManualCard(); } }, 25000);
+      _installTimer = setTimeout(() => {
+        if(_installWrap && !_installWrap.hidden && !_startingShown){ /* 仍显示则转手动 */ showManualCard(); }
+      }, 25000);
       return;
     }
     // progress：checking / copying / seeding 等阶段
@@ -1483,23 +1512,40 @@ async function getApiBase(){
       await window.localflow.retryDshInstall();
     });
   }
-  // dsh 不可达 → 若安装卡仍可见则保持，否则显示手动引导；可达 → 加载 iframe
+  // dsh 可达 → 加载 iframe；不可达 → 先「正在启动」，持续 20 秒仍连不上才升级为手动引导
+  const DSH_MANUAL_GRACE_MS = 20000;
+  let _downSince = null;
   if(window.localflow && window.localflow.onDshStatus){
-    window.localflow.onDshStatus((up) => {
+    window.localflow.onDshStatus((s) => {
+      // 兼容主进程旧版布尔值推送
+      const up = (typeof s === 'boolean') ? s : !!(s && s.up);
+      const starting = (s && typeof s === 'object') ? !!s.starting : false;
       if(up){
-        clearInstallTimer(); showDshGuide(false); setDshSrc();
+        _downSince = null;
+        clearInstallTimer(); showDshGuide(false); setDshSrc(false);
         // 连上后清除启动诊断（若先前崩溃过）
         if(_launchErr) _launchErr.hidden = true;
         if(_launchCmd) _launchCmd.hidden = true;
         if(_launchLog) _launchLog.hidden = true;
+        return;
       }
-      else if(!(_installWrap && !_installWrap.hidden)){ showManualCard(); }
+      if(_installWrap && !_installWrap.hidden && !_startingShown) return; // 安装卡自己管状态
+      if(starting){ _downSince = null; showStartingCard(); return; }
+      if(_downSince === null){ _downSince = Date.now(); showStartingCard(); return; }
+      if(Date.now() - _downSince >= DSH_MANUAL_GRACE_MS){ showManualCard(); }
+    });
+  }
+  // iframe 真正加载出内容后打标；之后状态推送不再打断它
+  if(_df){
+    _df.addEventListener('load', () => {
+      const cur = typeof _df.src === 'string' ? _df.src : '';
+      if(cur && cur !== 'about:blank') _dshLoaded = true;
     });
   }
   // 初始状态：先加载一次（主进程会推送 dsh-status）
-  if(_df) setDshSrc();
+  setDshSrc();
   if(_retry) _retry.addEventListener('click', () => {
-    setDshSrc(); showManualCard();
+    setDshSrc(true); showManualCard();
     // 若本地 dsh 已退出，尝试再拉起一次（崩溃诊断会通过 dsh-launch-error 回传）
     if(window.localflow && window.localflow.relaunchDsh){ window.localflow.relaunchDsh(); }
   });

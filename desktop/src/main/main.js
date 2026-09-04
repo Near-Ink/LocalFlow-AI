@@ -390,12 +390,15 @@ function resolveDshLaunch() {
   const env = { ...process.env, DSH_HOME: ensureDshHome() };
   const nodeBin = bundledNodePath();
   const entry = bundledDshEntry();
-  if (nodeBin && entry) return { cmd: nodeBin, args: [entry, '--profile', 'web', '--port', String(DSH_PORT)], env };
+  // --no-open：dsh 默认会打开系统默认浏览器，而本应用是把 dsh 内嵌进 iframe 的，
+  // 不关掉它就会出现「一开软件就跳出浏览器」的割裂体验。
+  const args = ['--profile', 'web', '--port', String(DSH_PORT), '--no-open'];
+  if (nodeBin && entry) return { cmd: nodeBin, args: [entry, ...args], env };
   if (!app.isPackaged) {
     const devBin = path.resolve(__dirname, '..', '..', '..', 'dsh-poc', 'node_modules', '.bin', 'dsh');
-    if (fs.existsSync(devBin)) return { cmd: devBin, args: ['--profile', 'web', '--port', String(DSH_PORT)], env };
+    if (fs.existsSync(devBin)) return { cmd: devBin, args, env };
   }
-  return { cmd: 'dsh', args: ['--profile', 'web', '--port', String(DSH_PORT)], env };
+  return { cmd: 'dsh', args, env };
 }
 
 /** dsh 运行日志路径（写入 userData，便于排查启动失败） */
@@ -537,17 +540,34 @@ function isDshUp(timeoutMs = 1500) {
   });
 }
 
-/** 周期推送 dsh 可达状态给渲染进程，驱动「引导卡 / 对话页」切换 */
+/** 自动补拉 dsh 的最小间隔，避免 dsh 反复秒退时疯狂重启 */
+const DSH_RELAUNCH_MIN_INTERVAL = 20000;
+let lastDshRelaunchAt = 0;
+
+/**
+ * 周期推送 dsh 可达状态给渲染进程，驱动「引导卡 / 对话页」切换。
+ * 推送的是 { up, starting }：starting 表示本应用已拉起 dsh 进程、正在启动中，
+ * 前端据此显示「正在启动」而不是直接报「未连接」，避免启动期误报吓到用户。
+ */
 async function monitorDsh() {
   // 始终引用全局 mainWindow：窗口可能被关掉后重建（关红叉不退出 app 再重开），
   // 若捕获旧引用会在旧窗口销毁后停掉整个探测循环，导致新窗口永不收到「已连接」信号。
   const win = mainWindow;
+  let up = false;
+  try { up = await isDshUp(); } catch (e) { up = false; }
+
+  const payload = { up, starting: !!dshProc };
   if (win && !win.isDestroyed()) {
-    try {
-      const up = await isDshUp();
-      win.webContents.send('dsh-status', up);
-    } catch (e) { /* ignore */ }
+    try { win.webContents.send('dsh-status', payload); } catch (e) { /* ignore */ }
   }
+
+  // 自愈：dsh 中途崩溃/被杀导致不可达时自动补拉一次，无需用户手动点「重新连接」
+  if (!up && !dshProc && !process.env.LOCALFLOW_DSH_HOST
+      && Date.now() - lastDshRelaunchAt > DSH_RELAUNCH_MIN_INTERVAL) {
+    lastDshRelaunchAt = Date.now();
+    tryLaunchDsh();
+  }
+
   // 无论窗口是否存在都继续轮询；窗口重建后下一轮自动恢复推送，避免探测循环永久停止
   setTimeout(() => monitorDsh(), 5000);
 }
