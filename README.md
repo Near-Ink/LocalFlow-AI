@@ -104,14 +104,14 @@ npm run dev
 
 从 [GitHub Releases](https://github.com/Near-Ink/LocalFlow-AI/releases) 下载对应平台安装包，双击安装即可。**Python 后端、DeepSeek Harness（dsh）与便携 Node 运行时均已内嵌**。首次启动会自动检测 dsh 是否已装：未装则解包内置安装包（对话页带进度条提示），已装但版本不符则自动更新到最新，已是最新则直接就绪——整个过程无需配环境、无需另行安装 dsh / Node（真正的零安装）。
 
-| 平台 | 文件（v0.2.5） | 适用 |
+| 平台 | 文件（v0.2.6） | 适用 |
 |------|---------------|------|
-| 🍎 macOS · Apple Silicon | `LocalFlow AI-0.2.5-macOS-arm64.dmg` | M1/M2/M3/M4 等新 Mac |
-| 🍎 macOS · Intel | `LocalFlow AI-0.2.5-macOS-x64.dmg` | Intel 芯片 Mac |
-| 🪟 Windows | `LocalFlow AI-Setup-0.2.5-Windows-x64.exe` | Windows 10/11 64 位 |
-| 🐧 Linux | `LocalFlow AI-0.2.5-Linux-x64.AppImage` | 主流 x86_64 发行版 |
+| 🍎 macOS · Apple Silicon | `LocalFlow AI-0.2.6-macOS-arm64.dmg` | M1/M2/M3/M4 等新 Mac |
+| 🍎 macOS · Intel | `LocalFlow AI-0.2.6-macOS-x64.dmg` | Intel 芯片 Mac |
+| 🪟 Windows | `LocalFlow AI-Setup-0.2.6-Windows-x64.exe` | Windows 10/11 64 位 |
+| 🐧 Linux | `LocalFlow AI-0.2.6-Linux-x64.AppImage` | 主流 x86_64 发行版 |
 
-> 💡 v0.2.0 起文件名已直接带平台标识（如 `LocalFlow AI-0.2.5-macOS-arm64.dmg`），按上表对应下载即可。
+> 💡 v0.2.0 起文件名已直接带平台标识（如 `LocalFlow AI-0.2.6-macOS-arm64.dmg`），按上表对应下载即可。
 > 🍎 **Intel Mac 用户**：v0.2.0 起同时提供 Apple Silicon（arm64）与 Intel（x64）两种 dmg，直接下载对应文件即可。
 
 > [!WARNING]

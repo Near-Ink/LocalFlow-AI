@@ -795,6 +795,10 @@ footer{margin-left:232px;padding:8px 20px;font-size:11px;color:var(--muted);back
 #view-chat{padding:0;}
 #dsh-frame{flex:1;min-height:0;width:100%;height:100%;border:none;background:#fff;}
 .dsh-guide{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#f4f6fb;z-index:20;}
+/* 关键修复：.dsh-guide 设了 display:flex，会覆盖 [hidden] 属性的默认 display:none，
+   导致 showDshGuide(false) 设置 hidden 后卡片仍常驻、永远盖在 dsh iframe 之上。
+   这里用更高优先级的 .dsh-guide[hidden] 让 hidden 真正生效。 */
+.dsh-guide[hidden]{display:none;}
 .dsh-guide-card{max-width:480px;padding:28px 30px;border-radius:14px;background:#fff;box-shadow:0 8px 30px rgba(30,41,99,.12);text-align:left;}
 .dsh-guide-card h2{margin:6px 0 10px;font-size:18px;color:#1e293b;}
 .dsh-guide-logo{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#2563eb,#7c3aed);color:#fff;font-weight:700;font-size:24px;display:flex;align-items:center;justify-content:center;}
