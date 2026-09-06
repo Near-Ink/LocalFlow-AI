@@ -30,6 +30,13 @@ class SystemHardwareMonitor(HardwareMonitor):
         self._pynvml = None
         self._nvidia_available = False
         self._apple_silicon = False
+        self._apple_gpu_name_cached = None
+        # 会话内不变的静态描述字段：只在第一次 snapshot 时算一次并缓存，
+        # 避免每 1 秒轮询都重复 psutil 调用（虽快，但属于无谓开销）。
+        self._static_cached = False
+        self._cache_cpu_cores = 0
+        self._cache_mem_total_mb = 0.0
+        self._cache_disk_total_mb = 0.0
         self._init_backends()
 
     def _init_backends(self):
@@ -165,7 +172,16 @@ class SystemHardwareMonitor(HardwareMonitor):
             return None
 
     def _apple_gpu_name(self) -> str:
-        """用 system_profiler 取真实 GPU/SoC 型号名（如 Apple M4 / M4 Pro）。"""
+        """用 system_profiler 取真实 GPU/SoC 型号名（如 Apple M4 / M4 Pro）。
+
+        结果在会话内不变，但 system_profiler 在 macOS 上很慢（1–3s），故**只算一次并缓存**，
+        避免前端每 1 秒轮询都拉起一次子进程拖慢硬件面板。动态占用指标不在此列，仍逐轮实时计算。
+        """
+        if getattr(self, "_apple_gpu_name_cached", None) is None:
+            self._apple_gpu_name_cached = self._apple_gpu_name_raw()
+        return self._apple_gpu_name_cached
+
+    def _apple_gpu_name_raw(self) -> str:
         try:
             import re, subprocess
             out = subprocess.run(
@@ -189,15 +205,37 @@ class SystemHardwareMonitor(HardwareMonitor):
             return self._psutil.virtual_memory().used / 1024 / 1024
         return 0.0
 
+    def _ensure_static_cached(self):
+        """首次 snapshot 时算一次静态描述字段（核心数 / 总内存 / 总磁盘）并缓存。
+
+        这些字段在会话内不会变化；动态指标（cpu%、已用内存、已用/剩余磁盘、
+        负载、开机时长）仍逐轮实时计算，见 snapshot()。
+        """
+        if self._static_cached or not self._psutil:
+            return
+        ps = self._psutil
+        self._cache_cpu_cores = ps.cpu_count(logical=True) or 0
+        try:
+            self._cache_mem_total_mb = ps.virtual_memory().total / 1024 / 1024
+        except Exception:
+            self._cache_mem_total_mb = 0.0
+        try:
+            self._cache_disk_total_mb = ps.disk_usage('/').total / 1024 / 1024
+        except Exception:
+            self._cache_disk_total_mb = 0.0
+        self._static_cached = True
+
     async def snapshot(self) -> HardwareInfo:
         info = HardwareInfo(platform=self._platform, timestamp=time.time())
 
         if self._psutil:
             ps = self._psutil
             info.cpu_usage = ps.cpu_percent(interval=0.1)
-            info.cpu_cores = ps.cpu_count(logical=True) or 0
+            # 静态字段走缓存（首次计算，之后复用）
+            self._ensure_static_cached()
+            info.cpu_cores = self._cache_cpu_cores
             mem = ps.virtual_memory()
-            info.mem_total_mb = mem.total / 1024 / 1024
+            info.mem_total_mb = self._cache_mem_total_mb
             info.mem_used_mb = mem.used / 1024 / 1024
 
             # —— 扩展指标（跨平台）——
@@ -208,7 +246,7 @@ class SystemHardwareMonitor(HardwareMonitor):
                 pass
             try:
                 du = ps.disk_usage('/')
-                info.disk_total_mb = du.total / 1024 / 1024
+                info.disk_total_mb = self._cache_disk_total_mb
                 info.disk_used_mb = du.used / 1024 / 1024
                 info.disk_free_mb = du.free / 1024 / 1024
             except Exception:
