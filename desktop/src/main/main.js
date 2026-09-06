@@ -6,6 +6,8 @@ const { spawn, spawnSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
+const https = require('https'); // GitHub Releases API + 安装包下载
+const os = require('os');        // 临时目录 / platform-arch 判定
 
 // 让内嵌的 dsh iframe（127.0.0.1:8080）绕过系统/环境 HTTP 代理：
 // 否则若用户开了系统代理或会话注入了 HTTP_PROXY，Chromium 会把 loopback 也走代理，
@@ -747,6 +749,13 @@ app.whenReady().then(async () => {
   ensureOllama(); // 不阻塞：缺失则弹引导框，按平台分流安装
   monitorDsh(); // dsh 状态周期探测并推送给前端（内部引用全局 mainWindow，窗口重建后仍有效）
 
+  // GitHub 自动更新：打包态启动延迟静默查一次，之后每 4h 复查。
+  // 开发态（npm start）不做自动检查，避免拿仓库 dev 版本与已发布 Release 误判。
+  if (app.isPackaged) {
+    setTimeout(() => { runUpdateCheck({ silent: true }); }, UPDATE_STARTUP_DELAY);
+    setInterval(() => { runUpdateCheck({ silent: true }); }, UPDATE_PERIODIC_MS);
+  }
+
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();
@@ -771,6 +780,259 @@ app.on('will-quit', () => {
   }
 });
 
+// === GitHub 自动更新 ===
+// 自研更新器（不依赖 electron-updater，CI 维持 --publish never）：
+//   1) 查 GitHub Releases API 拿最新 release 的 tag 与 assets；
+//   2) 去 v 前缀后与本地 app.getVersion() 做语义化比对，只有更高才提示；
+//   3) 用户确认后把当前平台的安装包下载到系统临时目录（带进度），
+//      下载完成后按平台唤起安装：Windows → NSIS /S 静默覆盖并重启；
+//      macOS → 挂载 dmg 并打开安装目录（ad-hoc 未公证，无法全静默，需用户拖入/点安装）；
+//      Linux → 记录 .AppImage 路径供替换。
+// 状态经 'app-update' IPC 推给渲染进程（设置页「关于与更新」区）。
+
+const UPDATE_REPO = 'Near-Ink/LocalFlow-AI';             // 与 package.json repository 一致
+const UPDATE_LATEST_API = `https://api.github.com/repos/${UPDATE_REPO}/releases/latest`;
+const UPDATE_STARTUP_DELAY = 12000;                       // 启动后延迟检查（ms），避开首启/后端冷启动
+const UPDATE_PERIODIC_MS = 4 * 60 * 60 * 1000;            // 运行期每 4h 复查一次
+const UA = 'LocalFlow-AI-Desktop/' + (() => { try { return app.getVersion(); } catch (e) { return 'x'; } })();
+
+let updateInProgress = false;   // 正在下载/安装（防重入）
+let updateState = { status: 'idle' }; // {status:'idle'|'checking'|'uptodate'|'available'|'downloading'|'downloaded'|'error'|'launching', ...}
+
+function sendUpdateState(extra) {
+  updateState = { ...updateState, ...extra };
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    try { mainWindow.webContents.send('app-update', updateState); } catch (e) { /* ignore */ }
+  }
+}
+
+/** 比较语义化版本 a > b。输入可含 v 前缀（自动去）。返回 1/0/-1。无法解析则返回 null。 */
+function compareVersions(a, b) {
+  const pa = String(a).replace(/^v/i, '').split(/[.\-]/).map((x) => /^\d+$/.test(x) ? parseInt(x, 10) : x);
+  const pb = String(b).replace(/^v/i, '').split(/[.\-]/).map((x) => /^\d+$/.test(x) ? parseInt(x, 10) : x);
+  const len = Math.max(pa.length, pb.length);
+  for (let i = 0; i < len; i++) {
+    const xa = i < pa.length ? pa[i] : 0;
+    const xb = i < pb.length ? pb[i] : 0;
+    if (typeof xa === 'number' && typeof xb === 'number') {
+      if (xa > xb) return 1;
+      if (xa < xb) return -1;
+    } else {
+      // 非纯数字段（如 -rc.1）：数字段优先；同段按字符串
+      const na = typeof xa === 'number' ? 0 : 1;
+      const nb = typeof xb === 'number' ? 0 : 1;
+      if (na !== nb) return na > nb ? -1 : 1;
+      const sa = String(xa), sb = String(xb);
+      if (sa > sb) return 1;
+      if (sa < sb) return -1;
+    }
+  }
+  return 0;
+}
+
+/** 选定当前平台要下载的安装包：返回 { name } 或 null（无匹配资产/不可自更新）。 */
+function pickUpdateAsset(assets, version) {
+  const plat = process.platform, arch = process.arch;
+  const wantName = (plat === 'darwin')
+    ? `LocalFlow AI-${version}-macOS-${arch}.dmg`
+    : (plat === 'win32')
+      ? `LocalFlow AI-Setup-${version}-Windows-x64.exe`
+      : (plat === 'linux')
+        ? `LocalFlow AI-${version}-Linux-x64.AppImage`
+        : null;
+  if (!wantName) return null;
+  const exact = assets.find((a) => a.name === wantName && a.browser_download_url);
+  if (exact) return { ...exact, kind: plat };
+  // 兜底：忽略架构后缀差异再模糊匹配一次（mac x64/arm64 dmg 名不确定时）
+  const base = wantName.replace(`-${arch}`, '');
+  const fuzzy = assets.find((a) => a.name === base && a.browser_download_url);
+  if (fuzzy) return { ...fuzzy, kind: plat, fuzzy: true };
+  return null;
+}
+
+/** HTTPS GET JSON（GitHub API 需 UA） */
+function getJSON(url, timeoutMs = 15000) {
+  return new Promise((resolve, reject) => {
+    const req = https.get(url, { headers: { 'User-Agent': UA, Accept: 'application/vnd.github+json' } }, (res) => {
+      let data = '';
+      res.setEncoding('utf8');
+      res.on('data', (c) => (data += c));
+      res.on('end', () => {
+        try { resolve({ status: res.statusCode, body: JSON.parse(data) }); }
+        catch (e) { reject(new Error('解析 GitHub 响应失败')); }
+      });
+    });
+    req.setTimeout(timeoutMs, () => { req.destroy(new Error('请求超时')); });
+    req.on('error', reject);
+  });
+}
+
+/**
+ * 检查 GitHub 是否有更新的稳定版。
+ * 返回 null（无网络/无更新/解析失败）或 { current, latest, tag, version, asset, url }。
+ * 仅当 latest 语义化 > current 且能找到当前平台安装包时才视为「可更新」。
+ */
+async function detectUpdate() {
+  const current = app.getVersion();
+  let json;
+  try { json = await getJSON(UPDATE_LATEST_API); }
+  catch (e) { return { error: e && e.message ? e.message : '网络不可达', current }; }
+  if (!json || json.status !== 200 || !json.body || json.body.tag_name == null) {
+    const reason = (json && json.body && json.body.message) ? json.body.message : `HTTP ${json ? json.status : '?'}`;
+    return { error: reason, current };
+  }
+  const tag = String(json.body.tag_name);
+  const version = tag.replace(/^v/i, '');
+  if (compareVersions(version, current) !== 1) {
+    return null; // 没有更高版本
+  }
+  const asset = pickUpdateAsset(json.body.assets || [], version);
+  if (!asset) {
+    return { error: `GitHub 上 ${tag} 没有匹配当前平台(${process.platform}/${process.arch})的安装包`, current, latest: tag };
+  }
+  return { current, tag, version, asset, url: json.body.html_url };
+}
+
+/**
+ * 下载 asset 到系统临时目录，返回本地绝对路径。带进度经 updateState 推送。
+ */
+function downloadAsset(url, name, destDir) {
+  return new Promise((resolve, reject) => {
+    fs.mkdirSync(destDir, { recursive: true });
+    const target = path.join(destDir, name);
+    const tmp = target + '.part';
+    sendUpdateState({ status: 'downloading', phase: 'fetch', percent: 0, fileName: name });
+    const req = https.get(url, { headers: { 'User-Agent': UA } }, (res) => {
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        res.resume();
+        return downloadAsset(res.headers.location, name, destDir).then(resolve, reject); // 跟随重定向
+      }
+      if (res.statusCode !== 200) {
+        res.resume();
+        return reject(new Error(`下载失败 HTTP ${res.statusCode}`));
+      }
+      const total = parseInt(res.headers['content-length'] || '0', 10);
+      const out = fs.createWriteStream(tmp);
+      let done = 0, last = 0;
+      res.on('data', (c) => {
+        done += c.length;
+        if (total && done - last > 512 * 1024) { last = done; sendUpdateState({ status: 'downloading', percent: Math.round((done / total) * 100) }); }
+      });
+      res.pipe(out);
+      out.on('finish', () => {
+        out.close(() => {
+          fs.renameSync(tmp, target);
+          sendUpdateState({ status: 'downloaded', percent: 100, filePath: target });
+          resolve(target);
+        });
+      });
+      out.on('error', (e) => { fs.rmSync(tmp, { force: true }); reject(e); });
+    });
+    req.setTimeout(120000, () => { req.destroy(new Error('下载超时')); });
+    req.on('error', (e) => { fs.rmSync(tmp, { force: true }); reject(e); });
+  });
+}
+
+/** 在 Finder/Explorer 中选中文件并定位显示（用户可见的最终步骤），返回打开句柄。 */
+async function launchInstaller(filePath, version) {
+  sendUpdateState({ status: 'launching', filePath, version });
+  const plat = process.platform;
+  if (plat === 'win32') {
+    // NSIS：静默覆盖安装并自动重启新版本（须经真实资源，禁止沙箱包裹）
+    const p = spawn(filePath, ['/S'], { detached: true, stdio: 'ignore', windowsHide: false });
+    p.unref();
+    sendUpdateState({ status: 'launching', filePath, version, note: 'NSIS 静默安装已启动，完成后会自动重启应用。' });
+    return p;
+  }
+  if (plat === 'darwin') {
+    // 挂载 dmg 并打开安装窗口。ad-hoc 未公证 + Gatekeeper：真一键静默需 Developer ID+公证，
+    // 当前给到「自动挂载 + 弹出 /Applications 说明」，用户拖入即完成覆盖。
+    spawn('hdiutil', ['attach', filePath, '-nobrowse', '-noautoopen'], { stdio: 'ignore' });
+    // 稍后打开挂载出的卷目录（等 attach 完成）
+    setTimeout(() => {
+      const mnt = path.join('/Volumes', 'LocalFlow AI ' + version);
+      if (fs.existsSync(mnt)) shell.openPath(mnt);
+      else shell.openPath(path.dirname(filePath)); // 未挂上则退到文件所在目录
+    }, 1500);
+    sendUpdateState({ status: 'launching', filePath, version, note: '安装包已下载并自动挂载，请把 LocalFlow AI 拖入 Applications 完成覆盖安装。' });
+    return null;
+  }
+  if (plat === 'linux') {
+    shell.showItemInFolder(filePath); // AppImage 定位到下载目录，供用户手动替换
+    sendUpdateState({ status: 'launching', filePath, version, note: 'Linux AppImage 已下载，请手动替换应用内可执行文件。' });
+    return null;
+  }
+  return null;
+}
+
+/** 检查→确认→下载→安装 的主流程。silent=true 表示静默检查（无更新不打扰、仅更新状态到 UI）。 */
+async function runUpdateCheck({ silent = false } = {}) {
+  if (updateInProgress) return updateState;
+  updateInProgress = true;
+  try {
+    sendUpdateState({ status: 'checking', silent });
+    const info = await detectUpdate();
+
+    // 无更高版本：静默模式直接收尾；手动模式给出明确「已是最新」提示
+    if (!info || (!info.asset && !info.error)) {
+      sendUpdateState({ status: 'uptodate', silent, current: app.getVersion() });
+      return updateState;
+    }
+    if (info.error) {
+      // 有 error（网络失败 / 无匹配资产）：静默模式不弹框；手动模式弹错误
+      const detail = info.error;
+      sendUpdateState({ status: 'error', silent, message: detail, current: info.current });
+      if (!silent && mainWindow) {
+        await dialog.showMessageBox(mainWindow, {
+          type: 'warning', title: '检查更新失败',
+          message: '无法获取更新信息',
+          detail: detail + (info.latest ? `\n最新版本 ${info.latest}` : '') + '\n请确认网络可访问 GitHub 后重试。',
+          buttons: ['知道了'],
+        });
+      }
+      return updateState;
+    }
+
+    // 有新版本 → 弹确认框（无论手动/静默都弹，这就是「提示」）
+    const relNotes = (info.url || '');
+    const { response } = await dialog.showMessageBox(mainWindow, {
+      type: 'info',
+      title: '发现新版本',
+      message: `LocalFlow AI 有新版本可用：v${info.current} → ${info.tag}`,
+      detail: `检测到安装包：${info.asset.name}\n是否现在下载并安装？\n（下载到临时目录，完成后按平台自动唤起安装器）\n\n${relNotes}`,
+      buttons: ['下载并安装', '稍后'],
+      defaultId: 0,
+      cancelId: 1,
+    });
+    if (response !== 0) {
+      sendUpdateState({ status: 'idle' });
+      return updateState;
+    }
+
+    // 下载
+    sendUpdateState({ status: 'downloading', phase: 'start', percent: 0, fileName: info.asset.name, current: info.current, tag: info.tag });
+    const dlDir = path.join(os.tmpdir(), 'localflow-update');
+    const filePath = await downloadAsset(info.asset.browser_download_url, info.asset.name, dlDir);
+
+    // 下载完成 → 唤起安装器。mac/linux 不强制退出；win NSIS 自己会重启
+    await launchInstaller(filePath, info.version);
+    return updateState;
+  } catch (e) {
+    sendUpdateState({ status: 'error', message: e && e.message ? e.message : String(e) });
+    if (mainWindow) {
+      await dialog.showMessageBox(mainWindow, {
+        type: 'error', title: '自动更新失败',
+        message: '更新过程中出现问题',
+        detail: e && e.message ? e.message : String(e),
+        buttons: ['知道了'],
+      });
+    }
+    return updateState;
+  } finally {
+    updateInProgress = false;
+  }
+}
+
 // === IPC ===
 
 ipcMain.handle('app:get-info', () => {
@@ -779,6 +1041,11 @@ ipcMain.handle('app:get-info', () => {
     platform: process.platform,
   };
 });
+
+// —— GitHub 自动更新 IPC ——
+ipcMain.handle('app:update-check', async () => await runUpdateCheck({ silent: false }));  // 手动「检查更新」
+ipcMain.handle('app:update-silent-check', async () => await runUpdateCheck({ silent: true })); // 启动/周期静默复查
+ipcMain.handle('app:update-state', () => updateState); // 渲染进程加载时取快照
 
 ipcMain.handle('app:api-base', () => {
   // 后端 API 地址（默认本地 8765）

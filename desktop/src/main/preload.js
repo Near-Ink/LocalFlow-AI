@@ -15,4 +15,9 @@ contextBridge.exposeInMainWorld('localflow', {
   onDshLaunchError: (cb) => ipcRenderer.on('dsh-launch-error', (_e, s) => cb(s)),
   getDshLaunchErrorState: () => ipcRenderer.invoke('app:dsh-launch-error-state'),
   relaunchDsh: () => ipcRenderer.invoke('app:dsh-relaunch'),
+  // GitHub 自动更新：状态推送 / 手动检查 / 取快照
+  onUpdate: (cb) => ipcRenderer.on('app-update', (_e, s) => cb(s)),
+  checkForUpdate: () => ipcRenderer.invoke('app:update-check'),
+  silentCheckForUpdate: () => ipcRenderer.invoke('app:update-silent-check'),
+  getUpdateState: () => ipcRenderer.invoke('app:update-state'),
 });
