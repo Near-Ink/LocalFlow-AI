@@ -1519,6 +1519,7 @@ async function getApiBase(){
   // dsh 可达 → 加载 iframe；不可达 → 先「正在启动」，持续 20 秒仍连不上才升级为手动引导
   const DSH_MANUAL_GRACE_MS = 20000;
   let _downSince = null;
+  let _lastUp = false; // 上一次状态是否为「可达」，用于识别 不可达→可达 的上升沿
   if(window.localflow && window.localflow.onDshStatus){
     window.localflow.onDshStatus((s) => {
       // 兼容主进程旧版布尔值推送
@@ -1526,13 +1527,20 @@ async function getApiBase(){
       const starting = (s && typeof s === 'object') ? !!s.starting : false;
       if(up){
         _downSince = null;
-        clearInstallTimer(); showDshGuide(false); setDshSrc(false);
+        clearInstallTimer(); showDshGuide(false);
+        // 仅在「不可达→可达」的上升沿强制重载一次 iframe：
+        // ① 避免每 5 秒轮询都重置 src 把 SPA 重启到永远加载中；
+        // ② 修正首帧加载失败时错误页仍保留原 URL → _dshLoaded 被误判为真 →
+        //    之后 up 事件被 setDshSrc 的守卫跳过、永不重载的白屏死锁。
+        if(!_lastUp){ _dshLoaded = false; setDshSrc(true); }
+        _lastUp = true;
         // 连上后清除启动诊断（若先前崩溃过）
         if(_launchErr) _launchErr.hidden = true;
         if(_launchCmd) _launchCmd.hidden = true;
         if(_launchLog) _launchLog.hidden = true;
         return;
       }
+      _lastUp = false;
       if(_installWrap && !_installWrap.hidden && !_startingShown) return; // 安装卡自己管状态
       if(starting){ _downSince = null; showStartingCard(); return; }
       if(_downSince === null){ _downSince = Date.now(); showStartingCard(); return; }
@@ -1543,7 +1551,10 @@ async function getApiBase(){
   if(_df){
     _df.addEventListener('load', () => {
       const cur = typeof _df.src === 'string' ? _df.src : '';
-      if(cur && cur !== 'about:blank') _dshLoaded = true;
+      const _base = _dshBase + '/';
+      // 仅当加载的确实是 dsh 自身（URL 以 dsh base 开头）才标记已加载。
+      // 连接/代理错误页也可能保留原 URL，但「上升沿强制重载」已能兜底重试。
+      if(cur && cur.indexOf(_base) === 0) _dshLoaded = true;
     });
   }
   // 初始状态：先加载一次（主进程会推送 dsh-status）

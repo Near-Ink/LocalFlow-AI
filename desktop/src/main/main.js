@@ -7,6 +7,12 @@ const path = require('path');
 const fs = require('fs');
 const http = require('http');
 
+// 让内嵌的 dsh iframe（127.0.0.1:8080）绕过系统/环境 HTTP 代理：
+// 否则若用户开了系统代理或会话注入了 HTTP_PROXY，Chromium 会把 loopback 也走代理，
+// 导致对话页（dsh）加载失败、表现为「白屏」。主进程自己的探测走 Node http（本就不经代理），
+// 二者判据不一致正是白屏的根因之一。<loopback> 覆盖 127.0.0.1 / localhost / [::1]。
+app.commandLine.appendSwitch('proxy-bypass-list', '<loopback>');
+
 let mainWindow = null;
 let backendProc = null;
 let dshProc = null;
