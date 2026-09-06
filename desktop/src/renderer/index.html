@@ -3120,7 +3120,14 @@ function prettyReadonly(v){
   try{
     if(Array.isArray(v)){
       if(!v.length) return '（空）';
-      return v.map(it=> typeof it==='object' ? esc(JSON.stringify(it)) : esc(String(it))).join('、');
+      return v.map(it=>{
+        if(typeof it!=='object'||it===null) return esc(String(it));
+        // 结构化绑定（如云端 API）摘要成「id · 模型」，避免把整段 JSON 挤进窄列导致竖排
+        const id = it.id || it.name || '';
+        const model = it.model || it.name || '';
+        const label = [id, model].filter(Boolean).join(' · ');
+        return esc(label || JSON.stringify(it));
+      }).join('、');
     }
     return Object.entries(v).map(([k,val])=>`<span class="ro-k">${esc(k)}</span>: <span class="ro-v">${esc(typeof val==='object'?JSON.stringify(val):String(val))}</span>`).join('，');
   }catch(_){ return esc(JSON.stringify(v)); }
@@ -3145,7 +3152,8 @@ function buildCloudSection(cloud){
   cloud = cloud || {bindings:[], count:0, active:'local', active_id:''};
   const bs = cloud.bindings||[];
   const rows = bs.length ? bs.map(b=>{
-    const active = (b.id===cloud.active_id);
+    // 仅当引擎确实切到云端且本绑定为激活项时，才标「激活中」；否则标「未激活」，避免与「本地」矛盾
+    const active = (cloud.active==='cloud' && b.id===cloud.active_id);
     return `<div class="cb-row">
       <div class="cb-info">
         <div class="cb-name">${esc(b.provider||b.base_url||'—')} ${active?'<span class="cb-tag on">激活中</span>':'<span class="cb-tag">未激活</span>'}</div>
