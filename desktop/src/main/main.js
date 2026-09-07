@@ -718,6 +718,11 @@ function createWindow() {
     minHeight: 600,
     title: 'LocalFlow AI',
     backgroundColor: '#f4f6fb',
+    // 关键：关闭后台节流。否则 Electron 默认 backgroundThrottling:true，当窗口
+    // 最小化 / 被遮挡 / App 切到后台时，Chromium 会把渲染进程的 setInterval(1000)
+    // 大幅降频（甚至暂停），导致「硬件实时监控不是每秒刷新」（回到前台才突然跳一次）。
+    // 硬件面板必须持续逐秒采集，故显式关闭节流。
+    backgroundThrottling: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,

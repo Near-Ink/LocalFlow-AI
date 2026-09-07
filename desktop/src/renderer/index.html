@@ -4159,7 +4159,17 @@ function pxFor(val,m){
 async function initHardware(){
   renderHWGrid();
   await updateHardware();
-  setInterval(updateHardware, 1000);
+  // 用自调度 setTimeout 链而非 setInterval：① 避免某次请求偶发 >1s 时并发堆积；
+  // ② 每轮在上一次完全结束后再隔 1s，节奏稳定（配合主进程 backgroundThrottling:false，
+  //    即使窗口在后台也保持真正的 ~1s 逐秒刷新，不会被 Chromium 节流成几十秒一次）。
+  scheduleHW();
+}
+function scheduleHW(){
+  clearTimeout(window.__hwTimer);
+  window.__hwTimer = setTimeout(async () => {
+    await updateHardware();
+    scheduleHW();
+  }, 1000);
 }
 
 function num(v,d=0){ return (typeof v==='number'&&isFinite(v))? v : d; }
@@ -4182,10 +4192,10 @@ async function updateHardware(){
   try{
     const r = await fetch(API + '/api/hardware/snapshot');
     const d = await r.json();
-    // 平台标签
-    const tag = document.getElementById('hw-platform');
+    // 平台标签（元素缺失时跳过，绝不因单点异常让整轮刷新停摆）
     const gpu0 = d.gpus && d.gpus[0];
-    tag.textContent = `${d.platform==='Darwin'?'macOS':d.platform} · ${d.cpu_cores} 核 · ${fmtGB(d.mem_total_mb)}${gpu0?(' · '+gpu0.name):''}`;
+    const tag = document.getElementById('hw-platform');
+    if(tag) tag.textContent = `${d.platform==='Darwin'?'macOS':d.platform} · ${d.cpu_cores} 核 · ${fmtGB(d.mem_total_mb)}${gpu0?(' · '+gpu0.name):''}`;
     const data = buildHWData(d);
     try{ updateMini(data, d); }catch(e){ console.warn('hw mini', e); }
     // 环形卡：单独 try，避免因某张卡 DOM/字段异常阻断历史记录
@@ -4194,7 +4204,8 @@ async function updateHardware(){
     try{
       HW_META.forEach(m=>{ if(hwHistory[m.key]){ hwHistory[m.key].push(num(data[m.key]?.pct)); if(hwHistory[m.key].length>MAX) hwHistory[m.key].shift(); } });
     }catch(e){ console.warn('hw hist', e); }
-    renderTrend();
+    // 趋势 / 明细各自隔离：任一失败只影响该项，不冻结整轮轮询
+    try{ renderTrend(); }catch(e){ console.warn('hw trend', e); }
     try{ renderSub(d); }catch(e){ console.warn('hw sub', e); }
   }catch(e){ console.error('hardware', e); }
 }
