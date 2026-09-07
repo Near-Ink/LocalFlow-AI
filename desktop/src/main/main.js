@@ -835,23 +835,43 @@ function compareVersions(a, b) {
   return 0;
 }
 
-/** 选定当前平台要下载的安装包：返回 { name } 或 null（无匹配资产/不可自更新）。 */
+/**
+ * 选定当前平台要下载的安装包：返回 asset 副本（附 kind）或 null。
+ *
+ * ⚠️ 不能用「拼出完整文件名再精确比对」：GitHub Release 上传资产时会把文件名里的
+ *    空格替换成点号，electron-builder 生成的 `LocalFlow AI-0.3.1-macOS-arm64.dmg`
+ *    到了 Release 上实际叫 `LocalFlow.AI-0.3.1-macOS-arm64.dmg`，精确匹配必然失败
+ *    （表现：提示「GitHub 上 vX 没有匹配当前平台(darwin/arm64)的安装包」）。
+ *    此外 Linux 资产用的是 x86_64 而非 x64。故改为按「平台 + 架构 + 扩展名」三要素
+ *    做 token 匹配：天然兼容空格/点号/下划线差异与大小写，并可列多个架构别名。
+ */
 function pickUpdateAsset(assets, version) {
   const plat = process.platform, arch = process.arch;
-  const wantName = (plat === 'darwin')
-    ? `LocalFlow AI-${version}-macOS-${arch}.dmg`
+  // 各平台的识别规则：ext 必须匹配，platToken 必须出现，archToken 命中任一别名
+  const spec = (plat === 'darwin')
+    ? { ext: '.dmg', platTokens: ['macos', 'darwin'], archTokens: arch === 'arm64' ? ['arm64'] : ['x64', 'x86_64'] }
     : (plat === 'win32')
-      ? `LocalFlow AI-Setup-${version}-Windows-x64.exe`
+      ? { ext: '.exe', platTokens: ['windows', 'win'], archTokens: ['x64', 'x86_64'] }
       : (plat === 'linux')
-        ? `LocalFlow AI-${version}-Linux-x64.AppImage`
+        ? { ext: '.appimage', platTokens: ['linux'], archTokens: ['x86_64', 'x64'] }
         : null;
-  if (!wantName) return null;
-  const exact = assets.find((a) => a.name === wantName && a.browser_download_url);
-  if (exact) return { ...exact, kind: plat };
-  // 兜底：忽略架构后缀差异再模糊匹配一次（mac x64/arm64 dmg 名不确定时）
-  const base = wantName.replace(`-${arch}`, '');
-  const fuzzy = assets.find((a) => a.name === base && a.browser_download_url);
-  if (fuzzy) return { ...fuzzy, kind: plat, fuzzy: true };
+  if (!spec) return null;
+  const list = (assets || []).filter((a) => a && a.name && a.browser_download_url);
+  if (!list.length) return null;
+
+  const norm = (s) => String(s).toLowerCase().replace(/[\s._-]+/g, ''); // 抹平 空格/点/下划线/连字符 差异
+  const hit = list.find((a) => {
+    const n = norm(a.name);
+    if (!n.endsWith(norm(spec.ext))) return false;
+    if (!spec.platTokens.some((t) => n.includes(norm(t)))) return false;
+    return spec.archTokens.some((t) => n.includes(norm(t)));
+  });
+  if (hit) return { ...hit, kind: plat };
+
+  // 兜底：只要该平台只剩一个同扩展名资产（例如只发了 arm64 一份 dmg），就直接用它
+  const sameExt = list.filter((a) => norm(a.name).endsWith(norm(spec.ext))
+    && spec.platTokens.some((t) => norm(a.name).includes(norm(t))));
+  if (sameExt.length === 1) return { ...sameExt[0], kind: plat, fuzzy: true };
   return null;
 }
 
