@@ -101,6 +101,25 @@ jobs:
           test -f build/node-bundle/node -o -f build/node-bundle/node.exe \
             || (echo "::error::node-bundle 未生成" && exit 1)
 
+      # 缓存 electron-builder 的二进制依赖（electron zip / winCodeSign / nsis / nsis-resources）。
+      # 不缓存的话每次构建都要从 GitHub release-assets CDN 重新下载上百 MB，
+      # 而该 CDN 在 CI 上偶发重置连接（wsarecv: connection forcibly closed），
+      # 会导致构建随机失败（实测 v0.3.2 的 windows job 即栽在 nsis-resources-3.4.1.7z）。
+      - name: Cache electron-builder binaries
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/electron-builder
+            ~/.cache/electron
+            ~/Library/Caches/electron-builder
+            ~/Library/Caches/electron
+            ~/AppData/Local/electron-builder/Cache
+            ~/AppData/Local/electron/Cache
+          key: eb-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('desktop/electron-builder.yml') }}
+          restore-keys: |
+            eb-${{ matrix.os }}-${{ matrix.arch }}-
+            eb-${{ matrix.os }}-
+
       - name: Package with electron-builder
         working-directory: desktop
         shell: bash
@@ -117,12 +136,27 @@ jobs:
         run: |
           case "${{ matrix.os }}" in
             macos-*)
-              npx electron-builder --config electron-builder.yml --mac --${{ matrix.arch }} --publish never ;;
+              CMD=(npx electron-builder --config electron-builder.yml --mac --${{ matrix.arch }} --publish never) ;;
             windows-2022)
-              npx electron-builder --config electron-builder.yml --win --x64 --publish never ;;
+              CMD=(npx electron-builder --config electron-builder.yml --win --x64 --publish never) ;;
             *)
-              npx electron-builder --config electron-builder.yml --linux --x64 --publish never ;;
+              CMD=(npx electron-builder --config electron-builder.yml --linux --x64 --publish never) ;;
           esac
+          # 自动重试：electron-builder 下载二进制时若被 CDN 掐断，整机会直接失败，
+          # 这里连续重试若干次（配合上面的缓存，通常第 1 次就能命中缓存、不再下载）。
+          for i in 1 2 3; do
+            echo "::group::electron-builder 第 $i/3 次尝试"
+            if "${CMD[@]}"; then
+              echo "::endgroup::"
+              echo "electron-builder 成功（第 $i 次）"
+              exit 0
+            fi
+            echo "::endgroup::"
+            echo "::warning::electron-builder 第 $i 次失败，10 秒后重试…"
+            sleep 10
+          done
+          echo "::error::electron-builder 连续 3 次失败"
+          exit 1
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
