@@ -8,6 +8,7 @@ const fs = require('fs');
 const http = require('http');
 const https = require('https'); // GitHub Releases API + 安装包下载
 const os = require('os');        // 临时目录 / platform-arch 判定
+const yaml = require('js-yaml'); // 解析/回写 DSH_HOME/settings.yaml（存量用户自愈）
 
 // 让内嵌的 dsh iframe（127.0.0.1:8080）绕过系统/环境 HTTP 代理：
 // 否则若用户开了系统代理或会话注入了 HTTP_PROXY，Chromium 会把 loopback 也走代理，
@@ -360,6 +361,52 @@ function backfillLocalPlugin(home, tpl) {
 }
 
 /**
+ * 存量用户自愈：保证 DSH_HOME/settings.yaml 的 local-flow provider 含有
+ * api + baseURL。否则 dsh 的 `llm-pi-ai` 命名空间会因 schema 强校验（缺 api / 缺 baseURL）
+ * 失败而处于 dormant 状态——命名空间不注册，dsh 的模型选择器就看不到本机模型。
+ *
+ * 关键约束：`llm-pi-ai` 命名空间**仅于 dsh 启动时**读取配置并注册，因此该修复必须在
+ * dsh 拉起前（ensureDshHome 阶段）完成；事后即便改 settings.yaml 或调 settings.update
+ * 也无法凭空让命名空间出现（已用 RPC 实测确认）。
+ *
+ * 行为：只补充缺失/错误的 api、baseURL 字段，完整保留已有 models 与用户其它配置；
+ * 字段已正确则直接跳过、不触碰文件（避免无谓重写）。
+ */
+function migrateLocalFlowProvider(home) {
+  const yamlPath = path.join(home, 'settings.yaml');
+  if (!fs.existsSync(yamlPath)) return;
+  let doc;
+  try {
+    doc = yaml.load(fs.readFileSync(yamlPath, 'utf8')) || {};
+  } catch (e) {
+    console.warn('[dsh] settings.yaml 解析失败，跳过自愈：', e.message);
+    return;
+  }
+  if (typeof doc !== 'object' || Array.isArray(doc)) return;
+
+  const TARGET_API = 'openai-completions';
+  const targetBaseURL = `http://127.0.0.1:${BACKEND_PORT}/v1`;
+
+  const lf = ((doc['llm-pi-ai'] && doc['llm-pi-ai'].providers) || {})['local-flow'] || {};
+  if (lf.api === TARGET_API && lf.baseURL === targetBaseURL) return; // 已正确，跳过
+
+  doc['llm-pi-ai'] = doc['llm-pi-ai'] || {};
+  doc['llm-pi-ai'].providers = doc['llm-pi-ai'].providers || {};
+  // 先展开用户已有字段（含 models），再确保 api/baseURL 取值正确
+  doc['llm-pi-ai'].providers['local-flow'] = {
+    ...lf,
+    api: TARGET_API,
+    baseURL: targetBaseURL,
+  };
+  try {
+    fs.writeFileSync(yamlPath, yaml.dump(doc, { lineWidth: -1, noRefs: true }), 'utf8');
+    console.log('[dsh] 已自愈 local-flow provider（注入 api/baseURL）');
+  } catch (e) {
+    console.warn('[dsh] 写回 settings.yaml 失败：', e.message);
+  }
+}
+
+/**
  * dsh 的 home：$DSH_HOME/profiles 决定 --profile web 加载哪个 profile。
  * 必须可写（dsh 会写 sessions/storages/settings），故放在 userData 下而非只读的 app 包内；
  * 首次运行从内置模板（或开发态 dsh-poc/dsh-home）播种一份，保证开箱即用。
@@ -382,6 +429,10 @@ function ensureDshHome() {
     }
     // 兜底补全本地插件（修复旧版升级后缺插件的回归）
     backfillLocalPlugin(home, tpl);
+    // 存量用户自愈：确保 local-flow provider 含 api/baseURL，
+    // 否则 dsh 的 llm-pi-ai 命名空间不注册、模型选择器看不到本机模型。
+    // 必须在 dsh 启动前完成（命名空间仅启动时注册）。
+    migrateLocalFlowProvider(home);
   } catch (e) {
     console.warn('[dsh] 准备 DSH_HOME 失败：', e.message);
   }

@@ -6,6 +6,8 @@ ui-onboarding:
 llm-pi-ai:
   providers:
     local-flow:
+      api: openai-completions
+      baseURL: http://127.0.0.1:8765/v1
       models:
         - id: qwen2.5vl:7b
           name: LocalFlow Qwen2.5 VL 7B
