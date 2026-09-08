@@ -97,7 +97,7 @@ def load_config() -> AppConfig:
         data_dir=data_dir,
         install_dir=install_dir,
         config_file=str(cfg_path),
-        ollama_base_url=os.environ.get("LOCALFLOW_OLLAMA_URL", "http://localhost:11434"),
+        ollama_base_url=os.environ.get("LOCALFLOW_OLLAMA_URL", "http://127.0.0.1:11434"),
         default_model=os.environ.get("LOCALFLOW_DEFAULT_MODEL", "llama3.1:8b"),
         cloud_api_base=os.environ.get("LOCALFLOW_CLOUD_BASE", ""),
         cloud_api_key=os.environ.get("LOCALFLOW_CLOUD_KEY", ""),

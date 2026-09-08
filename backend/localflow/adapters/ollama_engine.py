@@ -46,9 +46,16 @@ class OllamaEngine(LLMEngine):
 
     name = "ollama"
 
-    def __init__(self, base_url: str = "http://localhost:11434"):
-        self.base_url = base_url.rstrip("/")
-        self._client = httpx.AsyncClient(timeout=120.0)
+    def __init__(self, base_url: str = "http://127.0.0.1:11434"):
+        # 内部本地通信：
+        # ① 用 127.0.0.1 而非 localhost —— localhost 默认优先解析到 IPv6(::1)，
+        #    而 Ollama 仅监听 IPv4(127.0.0.1:11434)，httpx 在 ::1 上会卡到超时
+        #    （curl/urllib 会自动回退到 IPv4，httpx 不会），导致 health() 永远 False。
+        # ② trust_env=False —— 本地请求不走系统代理。用户若设了 HTTP_PROXY，httpx 默认
+        #    会把 localhost 也路由到代理（localhost 不在默认 no_proxy 里），连不上 Ollama。
+        base = base_url.rstrip("/").replace("://localhost", "://127.0.0.1")
+        self.base_url = base
+        self._client = httpx.AsyncClient(timeout=120.0, trust_env=False)
         self._vision_cache: dict = {}  # model -> bool|None?；TTL 简单缓存
         self._tools_cache: dict = {}  # model -> bool（是否支持 function calling）
         self.cache: Optional["CacheEngine"] = None  # 可选：接 app.cache 做 chat 结果缓存
@@ -143,8 +150,8 @@ class OllamaEngine(LLMEngine):
 
     async def pull(self, model: str) -> dict:
         """拉取模型到本地（阻塞等待完成；大模型耗时久，用独立长超时连接）"""
-        # 用独立连接避免共享 client 的 120s 超时打断大模型下载
-        async with httpx.AsyncClient(timeout=httpx.Timeout(None)) as client:
+        # 用独立连接避免共享 client 的 120s 超时打断大模型下载；trust_env=False 不走代理
+        async with httpx.AsyncClient(timeout=httpx.Timeout(None), trust_env=False) as client:
             async with client.stream(
                 "POST",
                 f"{self.base_url}/api/pull",
@@ -171,7 +178,7 @@ class OllamaEngine(LLMEngine):
         {"status":"downloading","total":N,"completed":N,"digest":...}，
         完成时 yield {"status":"success"}，出错 yield {"status":"error","error":...}。
         """
-        async with httpx.AsyncClient(timeout=httpx.Timeout(None)) as client:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(None), trust_env=False) as client:
             async with client.stream(
                 "POST",
                 f"{self.base_url}/api/pull",

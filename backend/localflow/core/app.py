@@ -43,7 +43,7 @@ from .wizard import DeploymentWizard
 class AppConfig:
     """应用配置"""
     data_dir: Path = Path.home() / ".localflow"
-    ollama_base_url: str = "http://localhost:11434"
+    ollama_base_url: str = "http://127.0.0.1:11434"
     default_model: str = "llama3.1:8b"
     cloud_api_base: str = ""
     cloud_api_key: str = ""
@@ -72,7 +72,7 @@ class LocalFlowApp:
     def __init__(self, config: Optional[AppConfig] = None):
         self.config = config or AppConfig()
         self.config.data_dir.mkdir(parents=True, exist_ok=True)
-        self.version = "0.3.5"
+        self.version = "0.3.6"
 
         # --- Settings 注册表（Agent / API 统一读写应用设置）---
         from .settings import register_core_settings
