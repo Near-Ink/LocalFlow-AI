@@ -101,6 +101,15 @@ jobs:
           test -f build/node-bundle/node -o -f build/node-bundle/node.exe \
             || (echo "::error::node-bundle 未生成" && exit 1)
 
+      # dsh 冒烟测试（兼容性闸门）：真的拉起 dsh 并发请求，确认它不会在处理请求时崩溃。
+      # 背景：dsh 0.1.2-rc.1 的 CLI 参数完全兼容、也能启动，但一收到 HTTP 请求就崩
+      # （invalid media type），导致 v0.3.1/v0.3.3 装完打不开。静态检查发现不了这类问题，
+      # 必须在打包前实测。任一环节崩溃即构建失败，问题版本无法进入安装包。
+      - name: Smoke test dsh (must survive real requests)
+        working-directory: desktop
+        shell: bash
+        run: node scripts/dsh-smoke.mjs
+
       # 缓存 electron-builder 的二进制依赖（electron zip / winCodeSign / nsis / nsis-resources）。
       # 不缓存的话每次构建都要从 GitHub release-assets CDN 重新下载上百 MB，
       # 而该 CDN 在 CI 上偶发重置连接（wsarecv: connection forcibly closed），

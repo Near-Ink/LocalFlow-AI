@@ -965,6 +965,15 @@ footer{margin-left:232px;padding:8px 20px;font-size:11px;color:var(--muted);back
           <button id="dsh-retry" class="btn-primary" data-page-node-id="OJuXAMpjJTtbTw4vgoACD6" data-i18n="dsh.retry">重新连接</button>
           <p class="dsh-guide-tip" data-page-node-id="09sMAT1upSIzDd8liBZHQ2" data-i18n="dsh.localOnly">未安装 dsh 也可使用「部署模型 / 硬件监控 / 对外 API / 设置」等本地功能。</p>
         </div>
+        <!-- dsh 反复崩溃已熔断：自动重启已暂停，避免无限循环空转 -->
+        <div id="dsh-crash-wrap" hidden data-page-node-id="dshCrashWrap">
+          <div class="dsh-guide-logo" data-page-node-id="dshCrashLogo">L</div>
+          <h2 data-page-node-id="dshCrashTitle">对话引擎反复崩溃</h2>
+          <p class="dsh-guide-error" id="dsh-crash-msg" data-page-node-id="dshCrashMsg"></p>
+          <p class="dsh-guide-tip" data-page-node-id="dshCrashTip1">对话引擎连续多次启动后崩溃，已自动停止重启以避免资源空转。其余本地功能（部署模型 / 硬件监控 / 对外 API / 设置）不受影响，可正常使用。</p>
+          <p class="dsh-guide-tip" data-page-node-id="dshCrashTip2">若点击下方「重新连接」后仍反复崩溃，通常是 dsh 版本与当前环境不兼容，请回报开发并临时回退到上一可用版本。</p>
+          <button id="dsh-crash-retry" class="btn-primary" data-page-node-id="dshCrashRetry">重新连接</button>
+        </div>
       </div>
     </div>
     <div class="chat-scroll" id="chat-scroll" data-page-node-id="aauT3IR3Disd80VclGsf9Q">
@@ -1392,6 +1401,9 @@ async function getApiBase(){
   const _launchErr = document.getElementById('dsh-launch-error');
   const _launchCmd = document.getElementById('dsh-launch-cmd');
   const _launchLog = document.getElementById('dsh-launch-log');
+  const _crashWrap = document.getElementById('dsh-crash-wrap');
+  const _crashMsg = document.getElementById('dsh-crash-msg');
+  const _crashRetry = document.getElementById('dsh-crash-retry');
   if(_hint) _hint.textContent = _dshBase.replace(/^https?:\/\//, '');
 
   let _installTimer = null;
@@ -1437,6 +1449,18 @@ async function getApiBase(){
       if(_installRetry) _installRetry.hidden = true;
     }
     if(_manualWrap) _manualWrap.hidden = true;
+    if(_crashWrap) _crashWrap.hidden = true;
+    showDshGuide(true);
+  }
+  // dsh 连续崩溃已熔断：展示明确提示，停止自动重启空转
+  function showCrashCard(msg){
+    _startingShown = false;
+    if(_installWrap) _installWrap.hidden = true;
+    if(_manualWrap) _manualWrap.hidden = true;
+    if(_crashWrap){
+      _crashWrap.hidden = false;
+      if(_crashMsg) _crashMsg.textContent = msg || '对话引擎连续多次崩溃，已停止自动重启。';
+    }
     showDshGuide(true);
   }
 
@@ -1544,6 +1568,12 @@ async function getApiBase(){
       // 兼容主进程旧版布尔值推送
       const up = (typeof s === 'boolean') ? s : !!(s && s.up);
       const starting = (s && typeof s === 'object') ? !!s.starting : false;
+      const crashed = (s && typeof s === 'object') ? !!s.crashed : false;
+      // 熔断：dsh 连续崩溃，自动重启已暂停。展示明确提示而非干等/无限重试。
+      if(crashed && !up){
+        showCrashCard((s && s.message) || '');
+        return;
+      }
       if(up){
         _downSince = null;
         clearInstallTimer(); showDshGuide(false);
@@ -1581,6 +1611,11 @@ async function getApiBase(){
   if(_retry) _retry.addEventListener('click', () => {
     setDshSrc(true); showManualCard();
     // 若本地 dsh 已退出，尝试再拉起一次（崩溃诊断会通过 dsh-launch-error 回传）
+    if(window.localflow && window.localflow.relaunchDsh){ window.localflow.relaunchDsh(); }
+  });
+  if(_crashRetry) _crashRetry.addEventListener('click', () => {
+    // 熔断后用户主动「重新连接」：reset 熔断计数并再拉起一次（主进程会复位 dshCrashCount）
+    showStartingCard();
     if(window.localflow && window.localflow.relaunchDsh){ window.localflow.relaunchDsh(); }
   });
   // ── 平移注意 ────────────────

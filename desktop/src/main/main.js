@@ -523,6 +523,13 @@ function tryLaunchDsh() {
         }
         appendDshLog(`[exit] code=${code} signal=${signal}`);
         dshProc = null;
+        // 崩溃判定：非正常退出（code≠0 或被信号杀死），且不是本应用退出导致的 kill。
+        // 注意 dsh 可能是「起来后被请求打崩」（如 0.1.2-rc.1），此时存活时间也不长。
+        const aliveMs = dshLaunchInfo ? (Date.now() - dshLaunchInfo.launchedAt) : 0;
+        if (!dshAppQuitting && (code !== 0 || signal)) {
+          appendDshLog(`[crash] 存活 ${aliveMs}ms 后异常退出，计入崩溃（第 ${dshCrashCount + 1} 次）`);
+          noteDshCrash();
+        }
         sendDshLaunchError(); // 长驻服务退出 = 崩溃，回传诊断
       });
       console.log('[dsh] 已尝试自动拉起：', launch.cmd, launch.args.join(' '),
@@ -553,6 +560,44 @@ const DSH_RELAUNCH_MIN_INTERVAL = 20000;
 let lastDshRelaunchAt = 0;
 
 /**
+ * ── dsh 崩溃熔断（关键防线）─────────────────────────────────────────────
+ * 背景：dsh 0.1.2-rc.1 会在**收到 HTTP 请求时**崩溃（invalid media type）。
+ * 而本应用每 5 秒探测一次 8080 —— 于是「探测 → 崩溃 → 20 秒后自动重拉 → 再被探测打崩」
+ * 形成永久重启循环，CPU 空转、界面卡死，表现就是「软件打不开」。
+ * 因此这里加熔断器：连续崩溃达到阈值就**停止自动重启**，把诊断信息交给用户，
+ * 其余功能（部署 / 硬件 / 对外 API / 设置）不受影响，用户点「重新连接」可手动重置。
+ */
+const DSH_CRASH_LIMIT = 3;          // 连续崩溃几次后熔断
+const DSH_HEALTHY_UPTIME_MS = 60000; // 存活超过这个时长视为「这次没崩」，计数归零
+let dshCrashCount = 0;
+let dshCircuitOpen = false;          // true = 已熔断，不再自动重启
+
+function noteDshCrash() {
+  dshCrashCount += 1;
+  if (dshCrashCount >= DSH_CRASH_LIMIT) {
+    dshCircuitOpen = true;
+    console.warn(`[dsh] 连续崩溃 ${dshCrashCount} 次，已熔断：停止自动重启，避免无限循环`);
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      try {
+        mainWindow.webContents.send('dsh-status', {
+          up: false, starting: false, crashed: true,
+          crashCount: dshCrashCount,
+          message: `对话引擎已连续崩溃 ${dshCrashCount} 次，已停止自动重启。其余功能可正常使用；可点「重新连接」再试一次。`,
+        });
+      } catch (e) { /* ignore */ }
+    }
+  }
+}
+
+/** dsh 稳定运行一段时间后，认为这次启动是健康的，清零崩溃计数并复位熔断 */
+function noteDshHealthy() {
+  if (dshCrashCount || dshCircuitOpen) {
+    dshCrashCount = 0;
+    dshCircuitOpen = false;
+  }
+}
+
+/**
  * 周期推送 dsh 可达状态给渲染进程，驱动「引导卡 / 对话页」切换。
  * 推送的是 { up, starting }：starting 表示本应用已拉起 dsh 进程、正在启动中，
  * 前端据此显示「正在启动」而不是直接报「未连接」，避免启动期误报吓到用户。
@@ -564,13 +609,23 @@ async function monitorDsh() {
   let up = false;
   try { up = await isDshUp(); } catch (e) { up = false; }
 
-  const payload = { up, starting: !!dshProc };
+  // dsh 由本应用拉起且已稳定存活超过阈值 → 视为健康，清零崩溃计数（复位熔断）
+  if (up && dshProc && dshLaunchInfo && dshLaunchInfo.launchedAt
+      && Date.now() - dshLaunchInfo.launchedAt > DSH_HEALTHY_UPTIME_MS) {
+    noteDshHealthy();
+  }
+
+  const payload = {
+    up, starting: !!dshProc,
+    crashed: dshCircuitOpen, crashCount: dshCrashCount,
+  };
   if (win && !win.isDestroyed()) {
     try { win.webContents.send('dsh-status', payload); } catch (e) { /* ignore */ }
   }
 
-  // 自愈：dsh 中途崩溃/被杀导致不可达时自动补拉一次，无需用户手动点「重新连接」
-  if (!up && !dshProc && !process.env.LOCALFLOW_DSH_HOST
+  // 自愈：dsh 中途崩溃/被杀导致不可达时自动补拉一次，无需用户手动点「重新连接」。
+  // ⚠️ 熔断后不再自动重启（否则会陷入 探测→崩溃→重拉 的无限循环）。
+  if (!up && !dshProc && !dshCircuitOpen && !process.env.LOCALFLOW_DSH_HOST
       && Date.now() - lastDshRelaunchAt > DSH_RELAUNCH_MIN_INTERVAL) {
     lastDshRelaunchAt = Date.now();
     tryLaunchDsh();
@@ -1106,6 +1161,9 @@ ipcMain.handle('app:dsh-relaunch', async () => {
   if (!app.isPackaged && process.env.LOCALFLOW_DSH_HOST) return { status: 'remote' };
   dshLaunchInfo = null;
   lastDshLaunchError = null;
+  // 用户主动重试 → 复位熔断，给一次机会（若再崩会重新累计到阈值再次熔断）
+  dshCrashCount = 0;
+  dshCircuitOpen = false;
   // 先确认确实没在监听，避免重复拉起
   const up = await isDshUp(800);
   if (up) return { status: 'up' };
