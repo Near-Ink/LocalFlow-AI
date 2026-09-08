@@ -1342,6 +1342,7 @@ let API = 'http://127.0.0.1:8765';
 let currentSession = null;   // 当前会话 id
 let modelList = [];
 let currentModel = '';
+let _defaultModelApplied = false;  // 保证「设置→默认模型」只在首次进入本地引擎时读取一次并作为初始模型
 let sending = false;
 let activeEngine = 'local';   // 当前激活引擎：云端激活时锁定下拉为绑定模型，防止选择与实际调用不一致
 
@@ -3152,10 +3153,21 @@ function settingRowHTML(s){
     ctl = `<div class="set-ctl"><select class="set-input" data-key="${s.key}">${opts}</select><button class="set-save" data-act="save-select" data-key="${s.key}">保存</button></div>`;
   } else if(s.type==='int' || s.type==='float'){
     ctl = `<div class="set-ctl"><input class="set-input" type="number" data-key="${s.key}" value="${esc(String(s.value===undefined||s.value===null?'':s.value))}" placeholder="输入数值"><button class="set-save" data-act="save-text" data-key="${s.key}">保存</button></div>`;
+  } else if(s.key==='default_model'){
+    // 默认模型：优先渲染成「已装本地模型」下拉（与对话页 ep-model 一致，可点击切换）；
+    // 仅当无模型可列时回退为文本输入框 + 联想，保证仍可手输。
+    const models = (window.__lfModels || []);
+    if(models.length){
+      const present = models.some(m=>String(m.id)===String(s.value));
+      const opts = models.map(m=>`<option value="${esc(m.id)}" ${String(m.id)===String(s.value)?'selected':''}>${esc(m.id)}${m.vision?' 🖼（可识图）':''}</option>`).join('');
+      const extra = present ? '' : `<option value="${esc(String(s.value))}" selected>${esc(String(s.value))}</option>`;
+      ctl = `<div class="set-ctl"><select class="set-input" data-key="${s.key}">${opts}${extra}</select><button class="set-save" data-act="save-select" data-key="${s.key}">保存</button></div>`;
+    } else {
+      ctl = `<div class="set-ctl"><input class="set-input" type="text" data-key="${s.key}" list="lf-model-list" value="${esc(fmtSettingVal(s.value))}" placeholder="输入模型名（如 llama3.1:8b）"><button class="set-save" data-act="save-text" data-key="${s.key}">保存</button></div>`;
+    }
   } else {
-    const list = (s.key==='default_model' && window.__lfModels && window.__lfModels.length) ? ' list="lf-model-list"' : '';
     const pick = (s.key==='install_dir') ? `<button class="set-save ghost" data-act="install-pick" data-key="${s.key}">选择文件夹</button>` : '';
-    ctl = `<div class="set-ctl"><input class="set-input" type="text" data-key="${s.key}"${list} value="${esc(fmtSettingVal(s.value))}" placeholder="输入新值">${pick}<button class="set-save" data-act="save-text" data-key="${s.key}">保存</button></div>`;
+    ctl = `<div class="set-ctl"><input class="set-input" type="text" data-key="${s.key}" value="${esc(fmtSettingVal(s.value))}" placeholder="输入新值">${pick}<button class="set-save" data-act="save-text" data-key="${s.key}">保存</button></div>`;
   }
 
   return `<div class="set-row" data-key="${s.key}">
@@ -4961,6 +4973,15 @@ async function syncEngineToUI(){
       }
     } else {
       await loadModelList();
+      // 让「设置 → 默认模型」真正生效：首次进入本地引擎且模型已装时，作为聊天初始模型（仅读取一次）
+      if(!_defaultModelApplied && modelList.length){
+        _defaultModelApplied = true;
+        try{
+          const dm = await (await fetch(API+'/api/settings/default_model')).json();
+          const dv = dm && dm.value != null ? String(dm.value) : '';
+          if(dv && modelList.some(m=>String(m.id)===dv)) currentModel = dv;
+        }catch(_){ /* 读取失败不阻塞，回退到已装首个模型 */ }
+      }
       if(!currentModel) currentModel = 'llama3.1:8b';
       if(sel && [...sel.options].some(o=>o.value===currentModel)) sel.value = currentModel;
     }

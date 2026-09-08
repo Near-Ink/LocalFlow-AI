@@ -623,6 +623,9 @@ async function monitorDsh() {
     try { win.webContents.send('dsh-status', payload); } catch (e) { /* ignore */ }
   }
 
+  // 自动把本地已部署模型同步进 dsh 的「LocalFlow (本机)」分组（dsh 起来后触发，内部节流）
+  syncLocalModelsToDsh();
+
   // 自愈：dsh 中途崩溃/被杀导致不可达时自动补拉一次，无需用户手动点「重新连接」。
   // ⚠️ 熔断后不再自动重启（否则会陷入 探测→崩溃→重拉 的无限循环）。
   if (!up && !dshProc && !dshCircuitOpen && !process.env.LOCALFLOW_DSH_HOST
@@ -633,6 +636,115 @@ async function monitorDsh() {
 
   // 无论窗口是否存在都继续轮询；窗口重建后下一轮自动恢复推送，避免探测循环永久停止
   setTimeout(() => monitorDsh(), 5000);
+}
+
+// ── 本地模型 → dsh 自动同步 ──────────────────────────────────────────────────
+// 让 dsh 模型选择器里的「LocalFlow (本机)」分组实时反映用户实际部署的本地模型，
+// 免去手动跑 sync-localflow-models.mjs。流程：读本地后端 /api/models → 经 dsh
+// settings.update RPC 写进 llm-pi-ai.local-flow provider 的 models（无需重启 dsh）。
+// 防御：本进程若继承了 HTTP(S)_PROXY，undici 可能把 127.0.0.1 也走代理导致连接失败，
+// 故启动时清掉代理相关 env 并把 loopback 纳入 NO_PROXY（与 dsh-smoke.mjs 一致）。
+for (const k of ['HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy', 'ALL_PROXY', 'all_proxy']) {
+  delete process.env[k];
+}
+process.env.NO_PROXY = '127.0.0.1,localhost,::1';
+process.env.no_proxy = '127.0.0.1,localhost,::1';
+
+const MODEL_SYNC_INTERVAL = 30000;        // 两次同步最小间隔（ms）
+const DEFAULT_CONTEXT = 32768;
+const DEFAULT_MAX_TOKENS = 4096;
+let _modelSyncRunning = false;
+let _modelSyncLastAt = 0;
+
+/** dsh 的 unary RPC（HTTP JSON 封装，与 sync-localflow-models.mjs 同协议）。 */
+async function dshRpc(method, payload) {
+  const rpcId = (globalThis.crypto && globalThis.crypto.randomUUID)
+    ? globalThis.crypto.randomUUID()
+    : `rpc-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const res = await fetch(`${DSH_BASE}/api/${method}`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ type: 'client-request', rpcId, method, payload }),
+    signal: AbortSignal.timeout(8000),
+  });
+  if (!res.ok) throw new Error(`dsh ${method} HTTP ${res.status}`);
+  const data = await res.json();
+  if (!data.result || !data.result.ok) {
+    const err = data.result && data.result.error;
+    throw new Error(`dsh ${method} 失败: ${err ? err.code + ': ' + err.message : '未知错误'}`);
+  }
+  return data.result.value;
+}
+
+/** 从本地后端拉真实已装模型（Ollama）。 */
+async function fetchLocalModels() {
+  const base = process.env.LOCALFLOW_API || `http://127.0.0.1:${BACKEND_PORT}`;
+  const res = await fetch(`${base}/api/models`, { signal: AbortSignal.timeout(5000) });
+  if (!res.ok) throw new Error(`LocalFlow /api/models HTTP ${res.status}`);
+  const list = await res.json();
+  const arr = Array.isArray(list) ? list : (list.models || []);
+  return arr.map((m) => ({
+    id: String(m.id != null ? m.id : m.name || ''),
+    vision: Boolean(m.vision),
+  })).filter((m) => m.id.length > 0);
+}
+
+/** 读 dsh 现有 local-flow provider（含 models）。 */
+async function fetchLocalFlowProvider() {
+  const view = await dshRpc('settings.describe', {});
+  const ns = view && view.namespaces && view.namespaces.find((n) => n.ns === 'llm-pi-ai');
+  if (!ns) throw new Error('dsh 未注册 llm-pi-ai 命名空间');
+  const provider = ns.value && ns.value.providers && ns.value.providers['local-flow'];
+  if (!provider) throw new Error('dsh 未注册 local-flow provider（模型分组缺失）');
+  return provider;
+}
+
+/** 合并：真实模型为准，保留已有元数据，新模型给默认上下文/上限。 */
+function mergeLocalModels(real, existing) {
+  const byId = new Map(existing.map((m) => [m.id, m]));
+  return real.map(({ id, vision }) => {
+    const old = byId.get(id);
+    if (old) return old; // 保留原有配置（contextWindow / maxTokens / name 等）
+    return {
+      id,
+      name: `LocalFlow ${id}`,
+      contextWindow: DEFAULT_CONTEXT,
+      maxTokens: DEFAULT_MAX_TOKENS,
+      input: [],
+      compat: { chatTemplateKwargs: {} },
+    };
+  });
+}
+
+/** 触发一次 dsh 模型列表同步（带节流与并发保护，可安全被 5s 探测定时器反复调用）。 */
+async function syncLocalModelsToDsh() {
+  const now = Date.now();
+  if (_modelSyncRunning) return;
+  if (now - _modelSyncLastAt < MODEL_SYNC_INTERVAL) return;
+  _modelSyncRunning = true;
+  _modelSyncLastAt = now;
+  try {
+    if (process.env.LOCALFLOW_DSH_HOST) return; // 远端 dsh 不同步本地模型（其 local-flow 指向远端后端）
+    const dshUp = await isDshUp(1500);
+    if (!dshUp) return;
+    const backendUp = await isBackendUp(1500);
+    if (!backendUp) return;
+    const real = await fetchLocalModels();
+    if (!real.length) { console.log('[model-sync] 本地无已装模型，跳过同步'); return; }
+    const provider = await fetchLocalFlowProvider();
+    const existing = Array.isArray(provider.models) ? provider.models : [];
+    const next = mergeLocalModels(real, existing);
+    if (JSON.stringify(next) === JSON.stringify(existing)) {
+      console.log(`[model-sync] 无变化（${next.length} 个本地模型已同步）`);
+      return;
+    }
+    await dshRpc('settings.update', { ns: 'llm-pi-ai', patch: { providers: { 'local-flow': { models: next } } } });
+    console.log(`[model-sync] 已同步 ${next.length} 个本地模型到 dsh（LocalFlow 本机分组）`);
+  } catch (e) {
+    console.warn('[model-sync] 同步失败（不影响使用，下个周期重试）：', e.message);
+  } finally {
+    _modelSyncRunning = false;
+  }
 }
 
 // ── Ollama（本地推理引擎）首启自检 ──────────────────────────────────────────
