@@ -361,16 +361,22 @@ function backfillLocalPlugin(home, tpl) {
 }
 
 /**
- * 存量用户自愈：保证 DSH_HOME/settings.yaml 的 local-flow provider 含有
- * api + baseURL。否则 dsh 的 `llm-pi-ai` 命名空间会因 schema 强校验（缺 api / 缺 baseURL）
- * 失败而处于 dormant 状态——命名空间不注册，dsh 的模型选择器就看不到本机模型。
+ * 存量用户自愈：保证 DSH_HOME/settings.yaml 的 local-flow provider 处于「无凭证」状态，
+ * 并含有正确的 api + baseURL。
+ *
+ * 双重根因：
+ * 1) 缺 api / 缺 baseURL → dsh 的 `llm-pi-ai` 命名空间因 schema 强校验失败而 dormant，
+ *    命名空间不注册，dsh 模型选择器看不到本机模型；
+ * 2) 若带 apiKeyEnv / 自定义 Authorization 头 → dsh 在请求时解析不到凭证，
+ *    抛 "No API key for provider: local-flow"（local-flow 指向本机 LocalFlow 后端，
+ *    该端点本身不鉴权，故 provider 必须是无凭证状态）。
  *
  * 关键约束：`llm-pi-ai` 命名空间**仅于 dsh 启动时**读取配置并注册，因此该修复必须在
  * dsh 拉起前（ensureDshHome 阶段）完成；事后即便改 settings.yaml 或调 settings.update
  * 也无法凭空让命名空间出现（已用 RPC 实测确认）。
  *
- * 行为：只补充缺失/错误的 api、baseURL 字段，完整保留已有 models 与用户其它配置；
- * 字段已正确则直接跳过、不触碰文件（避免无谓重写）。
+ * 行为：只补充缺失/错误的 api、baseURL，并移除凭证类字段（apiKeyEnv/headers），
+ * 完整保留已有 models 与用户其它配置；无需改动则直接跳过、不触碰文件。
  */
 function migrateLocalFlowProvider(home) {
   const yamlPath = path.join(home, 'settings.yaml');
@@ -387,20 +393,26 @@ function migrateLocalFlowProvider(home) {
   const TARGET_API = 'openai-completions';
   const targetBaseURL = `http://127.0.0.1:${BACKEND_PORT}/v1`;
 
-  const lf = ((doc['llm-pi-ai'] && doc['llm-pi-ai'].providers) || {})['local-flow'] || {};
-  if (lf.api === TARGET_API && lf.baseURL === targetBaseURL) return; // 已正确，跳过
+  const providers = (doc['llm-pi-ai'] && doc['llm-pi-ai'].providers) || {};
+  const lf = providers['local-flow'] || {};
+
+  // local-flow 指向本机 LocalFlow 后端（127.0.0.1:8765/v1），该端点不鉴权，
+  // 因此 provider 必须是“无凭证”状态——绝不能带 apiKeyEnv / 自定义 Authorization 头。
+  let changed = false;
+  const next = { ...lf };
+  if (next.api !== TARGET_API) { next.api = TARGET_API; changed = true; }
+  if (next.baseURL !== targetBaseURL) { next.baseURL = targetBaseURL; changed = true; }
+  if (next.apiKeyEnv !== undefined) { delete next.apiKeyEnv; changed = true; }
+  if (next.headers !== undefined) { delete next.headers; changed = true; }
+
+  if (!changed) return; // 已正确，跳过，不触碰文件
 
   doc['llm-pi-ai'] = doc['llm-pi-ai'] || {};
-  doc['llm-pi-ai'].providers = doc['llm-pi-ai'].providers || {};
-  // 先展开用户已有字段（含 models），再确保 api/baseURL 取值正确
-  doc['llm-pi-ai'].providers['local-flow'] = {
-    ...lf,
-    api: TARGET_API,
-    baseURL: targetBaseURL,
-  };
+  doc['llm-pi-ai'].providers = providers;
+  doc['llm-pi-ai'].providers['local-flow'] = next;
   try {
     fs.writeFileSync(yamlPath, yaml.dump(doc, { lineWidth: -1, noRefs: true }), 'utf8');
-    console.log('[dsh] 已自愈 local-flow provider（注入 api/baseURL）');
+    console.log('[dsh] 已自愈 local-flow provider（注入 api/baseURL，移除凭证字段）');
   } catch (e) {
     console.warn('[dsh] 写回 settings.yaml 失败：', e.message);
   }

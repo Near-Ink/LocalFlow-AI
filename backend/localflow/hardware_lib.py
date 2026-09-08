@@ -75,6 +75,11 @@ APPLE_CHIPS: List[dict] = [
 # sub: 名称子串（小写）；vram_gb 为该型号典型显存（部分型号有变体，匹配时优先用探测值）
 NVIDIA_GPUS: List[dict] = [
     {"sub": "rtx 5090", "vram": 32, "tier": TIER_MAX, "cap": "RTX 5090 旗舰卡，可运行 32B 级大模型"},
+    {"sub": "rtx 5080", "vram": 16, "tier": TIER_HIGH, "cap": "RTX 5080，可流畅运行 14B 级模型"},
+    {"sub": "rtx 5070 ti", "vram": 16, "tier": TIER_HIGH, "cap": "RTX 5070 Ti，可流畅运行 14B 级模型"},
+    {"sub": "rtx 5070", "vram": 12, "tier": TIER_MID, "cap": "RTX 5070，可流畅运行 7B-14B 级模型"},
+    {"sub": "rtx 5060 ti", "vram": 16, "tier": TIER_HIGH, "cap": "RTX 5060 Ti，可流畅运行 14B 级模型"},
+    {"sub": "rtx 5060", "vram": 8, "tier": TIER_MID, "cap": "RTX 5060，可流畅运行 7B 级模型"},
     {"sub": "rtx 4090", "vram": 24, "tier": TIER_MAX, "cap": "RTX 4090 旗舰卡，可运行 32B 级大模型"},
     {"sub": "rtx 4080 super", "vram": 16, "tier": TIER_HIGH, "cap": "RTX 4080 Super，可流畅运行 14B 级模型"},
     {"sub": "rtx 4080", "vram": 16, "tier": TIER_HIGH, "cap": "RTX 4080，可流畅运行 14B 级模型"},

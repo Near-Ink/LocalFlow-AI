@@ -147,7 +147,7 @@ def _reg_cloud_bindings(app) -> Optional[dict]:
 
 
 def _reg_version(app) -> Optional[dict]:
-    return getattr(app, "version", "0.4.1")
+    return getattr(app, "version", "0.4.2")
 
 
 def _reg_api_key(app) -> Optional[dict]:

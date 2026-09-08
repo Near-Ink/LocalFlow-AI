@@ -171,8 +171,46 @@ class OllamaEngine(LLMEngine):
         self._tools_cache[model] = tools_ok
         return tools_ok
 
+    # ── 模型名归一化 ──────────────────────────────────────────────────────────
+    # 用户从「＋ 拉取新模型」框输入的往往是展示名 / HuggingFace 风格名
+    # （如 "Qwen3-30B-A3B-Instruct"），而 Ollama /api/pull 只认合法 tag
+    # （如 "qwen3:30b-a3b-instruct"），直传会 400 "invalid model name"。
+    # 这里把常见写法归一化，避免用户手动输错导致拉取失败。
+    _MODEL_NAME_ALIASES = {
+        "qwen2.5-vl-7b": "qwen2.5-vl:7b",
+        "qwen2.5-vl-3b": "qwen2.5-vl:3b",
+        "qwen3-30b-a3b-instruct": "qwen3:30b-a3b-instruct",
+        "qwen3-30b-a3b": "qwen3:30b-a3b",
+        "qwen3-235b-a22b-instruct": "qwen3:235b-a22b-instruct",
+        "qwen3-235b-a22b": "qwen3:235b-a22b",
+        "llama3.2-vision-11b": "llama3.2-vision:11b",
+        "llama3.2-vision-90b": "llama3.2-vision:90b",
+    }
+
+    @staticmethod
+    def _normalize_model_name(model: str) -> str:
+        s = (model or "").strip()
+        if not s:
+            return s
+        # 1) 去掉 HuggingFace namespace（如 "Qwen/..." 前缀），保留最后一段
+        if "/" in s:
+            s = s.rsplit("/", 1)[-1]
+        low = s.lower()
+        # 2) 显式别名优先（覆盖族名含连字符/点的视觉/多模态模型）
+        if low in OllamaEngine._MODEL_NAME_ALIASES:
+            return OllamaEngine._MODEL_NAME_ALIASES[low]
+        # 3) 已是合法 Ollama tag（含冒号）原样返回
+        if ":" in low:
+            return low
+        # 4) 无冒号但有连字符：把第一个 '-' 当作 模型族:tag 分界
+        #    "qwen3-30b-a3b-instruct" -> "qwen3:30b-a3b-instruct"
+        if "-" in low:
+            return low.replace("-", ":", 1)
+        return low
+
     async def pull(self, model: str) -> dict:
         """拉取模型到本地（阻塞等待完成；大模型耗时久，用独立长超时连接）"""
+        model = self._normalize_model_name(model)
         # 用独立连接避免共享 client 的 120s 超时打断大模型下载；trust_env=False 不走代理
         async with httpx.AsyncClient(timeout=httpx.Timeout(None), trust_env=False) as client:
             async with client.stream(
@@ -201,6 +239,7 @@ class OllamaEngine(LLMEngine):
         {"status":"downloading","total":N,"completed":N,"digest":...}，
         完成时 yield {"status":"success"}，出错 yield {"status":"error","error":...}。
         """
+        model = self._normalize_model_name(model)
         async with httpx.AsyncClient(timeout=httpx.Timeout(None), trust_env=False) as client:
             async with client.stream(
                 "POST",
