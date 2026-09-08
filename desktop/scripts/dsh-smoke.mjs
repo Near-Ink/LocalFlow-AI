@@ -18,6 +18,15 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+// 关键防御：本脚本通过 Node 全局 fetch 探测 127.0.0.1 上的 dsh。若运行环境带 HTTP(S)_PROXY
+// （某些企业/CI runner 会注入），undici 可能把 127.0.0.1 也走代理导致连接失败、误判 dsh 起不来。
+// 这里在进程早期清除代理并显式声明 NO_PROXY，确保只连本机回环，避免「假阴性」。
+for (const k of ['HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy', 'ALL_PROXY', 'all_proxy']) {
+  delete process.env[k];
+}
+process.env.NO_PROXY = '127.0.0.1,localhost,::1';
+process.env.no_proxy = '127.0.0.1,localhost,::1';
+
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PORT = Number(process.env.DSH_SMOKE_PORT || 8123);
 const BASE = `http://127.0.0.1:${PORT}`;

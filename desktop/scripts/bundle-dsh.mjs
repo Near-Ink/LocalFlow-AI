@@ -207,22 +207,25 @@ function bundleNode() {
  * 把 dsh-poc/packages/* 下的本地工具插件（@local/*）物化进每个 profile 的
  * node_modules/@local/（web、headless），作为 dsh 解析插件的真实副本。
  *
- * 背景：profiles/web、profiles/headless 的 package.json 用 `link:../../packages/<x>` 声明
- * 这些本地插件，但 profile 目录不是 pnpm workspace 成员（pnpm-workspace.yaml 只含 packages/*），
- * 也没有任何已安装包依赖它们 → pnpm 只生成了指向 dsh-poc/packages 的「软链」，并未把源码
- * 物化进 bundle。而运行时主进程用 copyDirSync 播种 DSH_HOME 时会跳过软链，导致
- * userData/dsh-home/profiles/.../node_modules/@local/ 为空 → dsh 加载插件报
- * ERR_MODULE_NOT_FOUND 并退出（8080 起不来，app 显示报错）。
- * 这里直接把插件源码以「真实副本」复制进 bundle（自包含、无开发者绝对路径），与 pnpm 是否
- * 链接解耦，且能被 copyDirSync 正常播种。
+ * 背景（血泪教训，v0.3.5→v0.3.6 之间 CI 构建全平台失败的根因）：
+ * profiles/web、profiles/headless 各自是独立的 pnpm workspace（有自己的
+ * pnpm-workspace.yaml + pnpm-lock.yaml），但 dsh-poc/pnpm-workspace.yaml 只列了
+ * packages/*，因此根 `pnpm install` 不会为 profile 安装依赖；且
+ * `dsh-home/profiles/<profile>/node_modules` 被 .gitignore 忽略（仓库里 0 个跟踪文件）。
+ * 结果：CI 全新检出里 `profiles/web/node_modules` 根本不存在。旧逻辑里有
+ * `if (!fs.existsSync(profileNm)) continue` 守卫 —— 本地开发机能跑是因为开发者机器上
+ * 这个目录碰巧存在（被 pnpm 或历史提交遗留），而 CI 里直接被跳过，插件从未打进 bundle →
+ * dsh 加载 web profile 时报 ERR_MODULE_NOT_FOUND（@local/file-workspace-preview），
+ * 8080 起不来。本地构建能发版、CI 构建必崩，正是这类「本地有、远端无」的经典坑。
+ *
+ * 修复：不再依赖「源 dsh-home 里是否预先存在 node_modules」——这里始终创建
+ * profiles/<profile>/node_modules/@local/，并把插件从 dsh-poc/packages 直接物化为
+ * 自包含副本（copyDirFollow 跟随软链，连其 @deepseek-ai/* 运行时依赖一并物化），
+ * 彻底与 pnpm 是否已链接解耦。插件自身导入的 @deepseek-ai/dsh-tools 等，即便不进插件内，
+ * 也会沿目录向上解析到已打包的根 node_modules（build/dsh-bundle/node_modules），必然可达。
  *
  * 关键落点：必须落在「每个 profile 自己」的 node_modules/@local/ 下，因为 dsh 从
- * profiles/<profile>/node_modules 向上解析，只有 profiles/web/node_modules/@local/（或
- * profiles/headless/node_modules/@local/）能被对应 profile 的 ESM bare import 解析。
- * dsh-home 在首次启动会被播种到 userData/dsh-home，故放这里即可在部署后自然落到正确位置。
- *
- * 注：插件运行时依赖 @deepseek-ai/dsh-tools，已由上方 copyDirFollow(dsh-poc/dsh-home)
- * 把 dsh-home 内既有的 @deepseek-ai/* 软链一并解引用为真实副本，无需此处重复处理。
+ * profiles/<profile>/node_modules 向上解析 bare import，只有这里能被对应 profile 找到。
  */
 function bundleLocalPlugins() {
   const srcPackages = path.join(dshPocDir, 'packages');
@@ -235,9 +238,12 @@ function bundleLocalPlugins() {
     warn('未找到 dsh-home/profiles，跳过本地插件物化');
     return;
   }
+  let materialized = 0;
   for (const profile of fs.readdirSync(profilesDir)) {
+    // 关键修复：无论源 dsh-home 里 profiles/<profile>/node_modules 是否存在（CI 里它因
+    // .gitignore 而缺失），都强制创建 node_modules/@local，保证插件必定进入 bundle。
     const profileNm = path.join(profilesDir, profile, 'node_modules');
-    if (!fs.existsSync(profileNm) || !fs.statSync(profileNm).isDirectory()) continue;
+    fs.mkdirSync(profileNm, { recursive: true });
     const destLocal = path.join(profileNm, '@local');
     fs.mkdirSync(destLocal, { recursive: true });
     for (const name of fs.readdirSync(srcPackages)) {
@@ -246,24 +252,21 @@ function bundleLocalPlugins() {
       if (!st.isDirectory() || !fs.existsSync(path.join(srcPkg, 'package.json'))) continue;
       const destPkg = path.join(destLocal, name);
       fs.rmSync(destPkg, { recursive: true, force: true });
-      // 只复制插件源码（index.js / cordis.patch.yml 等），其依赖 @deepseek-ai/dsh-tools
-      // 已在 dsh-home 内由 copyDirFollow 一并物化，无需打进插件内。
-      copyPluginTree(srcPkg, destPkg);
+      // 物化整个插件（跟随软链，含其 @deepseek-ai/* 运行时依赖），自包含、无开发者绝对路径。
+      copyDirFollow(srcPkg, destPkg);
+      materialized++;
       log('本地插件已物化：profiles/%s/node_modules/@local/%s', profile, name);
     }
   }
-}
-
-/** 复制插件目录但跳过其 node_modules（依赖交给顶层 hoist） */
-function copyPluginTree(src, dest) {
-  fs.mkdirSync(dest, { recursive: true });
-  const entries = fs.readdirSync(src, { withFileTypes: true });
-  for (const e of entries) {
-    if (e.name === 'node_modules') continue;
-    const s = path.join(src, e.name), d = path.join(dest, e.name);
-    if (e.isDirectory()) copyPluginTree(s, d);
-    else if (e.isSymbolicLink()) continue;            // 源码层不应有软链
-    else fs.copyFileSync(s, d);
+  if (materialized === 0) {
+    throw new Error('未物化任何本地插件 —— 请检查 dsh-poc/packages 下是否存在带 package.json 的插件目录');
+  }
+  // 断言：web profile 必须能解析到 @local/file-workspace-preview（dsh 加载 web profile 的
+  // 硬性依赖）。若缺失，宁可在此直接失败并给出明确信息，也不要让问题版本流到 dsh-smoke
+  // 甚至发版后才以「对话引擎起不来」的离奇方式暴露。
+  const webPlugin = path.join(dshBundle, 'dsh-home', 'profiles', 'web', 'node_modules', '@local', 'file-workspace-preview', 'package.json');
+  if (!fs.existsSync(webPlugin)) {
+    throw new Error(`web profile 缺少本地插件 @local/file-workspace-preview（${webPlugin} 不存在）—— 打包产物不可用`);
   }
 }
 
