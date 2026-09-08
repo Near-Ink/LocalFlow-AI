@@ -3268,8 +3268,10 @@ function buildModelsSection(models){
   if(models && models.ok===false){ rows = `<div class="set-empty" style="padding:18px 0">模型列表不可用：${esc(models.error||'')}</div>`; }
   else {
     const list = (models||[]);
-    rows = list.length ? list.map(m=>`<div class="cb-row"><div class="cb-info"><div class="cb-name">${esc(m.id)} ${m.vision?'<span class="cb-tag on">视觉</span>':''}</div><div class="cb-sub">${esc(m.backend||'')}${m.size?(' · '+(m.size/1e9).toFixed(1)+'GB'):''}</div></div></div>`).join('')
-      : '<div class="set-empty" style="padding:18px 0">本地暂无模型。可在部署向导中拉取。</div>';
+    rows = list.length ? list.map(m=>{
+      const act = `<button class="set-save ghost" data-act="model-uninstall" data-id="${esc(m.id)}">卸载</button>`;
+      return `<div class="cb-row"><div class="cb-info"><div class="cb-name">${esc(m.id)} ${m.vision?'<span class="cb-tag on">视觉</span>':''}</div><div class="cb-sub">${esc(m.backend||'')}${m.size?(' · '+(m.size/1e9).toFixed(1)+'GB'):''}</div></div><div class="cb-act">${act}</div></div>`;
+    }).join('') : '<div class="set-empty" style="padding:18px 0">本地暂无模型。可在部署向导中拉取。</div>';
   }
   return `<div class="set-group"><div class="g-title">本地模型（${Array.isArray(models)?models.length:0}）</div><div class="set-card">${rows}</div></div>`;
 }
@@ -3398,6 +3400,7 @@ function onSetBodyClick(e){
   if(act==='install-pick'){ pickInstallDirFor(key); return; }
   if(act==='cloud-activate'){ cloudActivate(actEl.dataset.id); return; }
   if(act==='cloud-unbind'){ cloudUnbind(actEl.dataset.id); return; }
+  if(act==='model-uninstall'){ modelUninstall(actEl.dataset.id); return; }
   if(act==='cloud-switch'){ cloudSwitch(actEl.dataset.target); return; }
   if(act==='cloud-fetch-models'){ cloudFetchModels(); return; }
   if(act==='cloud-bind'){ cloudBind(actEl.dataset.activate==='1'); return; }
@@ -3456,6 +3459,16 @@ async function cloudUnbind(id){
     const r = await fetch(API+'/api/cloud/unbind',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({binding_id:id})});
     const d = await r.json().catch(()=>({}));
     if(d && d.ok){ setMsg('✓ 已解绑', 'ok'); loadSettings(); } else setMsg('✗ '+(d.error||'解绑失败'), 'err');
+  }catch(e){ setMsg('请求失败：'+e, 'err'); }
+}
+
+async function modelUninstall(id){
+  if(!confirm('确定卸载本地模型「'+id+'」？\n该操作会删除本地模型文件，无法撤销。')) return;
+  setMsg('卸载中…', 'wait');
+  try{
+    const r = await fetch(API+'/api/models/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:id})});
+    const d = await r.json().catch(()=>({}));
+    if(d && d.ok){ setMsg('✓ 已卸载 '+id, 'ok'); loadSettings(); } else setMsg('✗ '+(d.error||'卸载失败'), 'err');
   }catch(e){ setMsg('请求失败：'+e, 'err'); }
 }
 async function cloudSwitch(target){

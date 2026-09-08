@@ -90,3 +90,12 @@ class LLMEngine(ABC):
     async def health(self) -> bool:
         """引擎是否可用"""
         ...
+
+    async def delete_model(self, name: str) -> dict:
+        """删除本地模型（如 Ollama 的 DELETE /api/delete）。
+
+        返回: {"ok": bool, "error": str}
+        不支持删除的引擎（如云端 OpenAI）子类可不重写，默认抛出 NotImplementedError，
+        由 API 层转成友好报错。
+        """
+        raise NotImplementedError("当前引擎不支持删除模型")

@@ -22,6 +22,10 @@ class PullReq(BaseModel):
     name: str
 
 
+class DeleteReq(BaseModel):
+    name: str
+
+
 @router.get("", response_model=List[ModelInfo])
 async def list_models(app=Depends(get_app)):
     """列出本地可用模型（含视觉能力标注）"""
@@ -90,3 +94,21 @@ async def health(app=Depends(get_app)):
     """检查引擎健康状态"""
     ok = await app.engine.health()
     return {"status": "ok" if ok else "unavailable", "engine": app.engine.name}
+
+
+@router.post("/delete")
+async def delete_model(req: DeleteReq, app=Depends(get_app)):
+    """删除本地模型（仅支持删除的本地引擎，如 Ollama）"""
+    name = req.name.strip()
+    if not name:
+        return {"ok": False, "error": "模型名为空"}
+    fn = getattr(app.engine, "delete_model", None)
+    if fn is None:
+        return {"ok": False, "error": "当前引擎不支持删除模型"}
+    try:
+        res = await fn(name)
+    except NotImplementedError:
+        return {"ok": False, "error": "当前引擎不支持删除模型（仅本地模型可卸载）"}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+    return res

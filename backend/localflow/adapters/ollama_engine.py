@@ -88,6 +88,29 @@ class OllamaEngine(LLMEngine):
         except Exception:
             return []
 
+    async def delete_model(self, name: str) -> dict:
+        """删除本地 Ollama 模型（DELETE /api/delete；个别老版本仅支持 POST，自动回退）。
+
+        返回: {"ok": bool, "error": str}
+        """
+        body = {"name": name, "model": name}  # 兼容不同 Ollama 版本的字段名
+        try:
+            r = await self._client.request(
+                "DELETE", f"{self.base_url}/api/delete", json=body
+            )
+            if r.status_code not in (200, 204):
+                # 老版本 Ollama 只认 POST /api/delete
+                r = await self._client.post(
+                    f"{self.base_url}/api/delete", json=body
+                )
+            if r.status_code in (200, 204):
+                self._vision_cache.pop(name, None)
+                self._tools_cache.pop(name, None)
+                return {"ok": True}
+            return {"ok": False, "error": f"HTTP {r.status_code}: {(r.text or '')[:200]}"}
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+
     async def get_context_length(self, model: str) -> int:
         """查询模型上下文窗口大小（Ollama /api/show）"""
         try:
