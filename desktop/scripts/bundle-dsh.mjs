@@ -109,6 +109,64 @@ function patchDshShim() {
   }
 }
 
+/**
+ * 修复 dsh 0.1.2-rc.1 起、并在 0.1.5-rc.3 等后续版本重新出现的崩溃回归：
+ * dsh-host-webserver 的 gzip 中间件会调用 negotiator.encoding()，而 dsh 依赖的 negotiator
+ * 是一份被改坏的 fork——其 parseAcceptEncoding 用解析 Content-Type 的 content-type 库去解析
+ * Accept-Encoding 头，浏览器（Electron iframe）发出的 `Accept-Encoding: gzip, deflate, br`
+ * 不是合法媒体类型，content-type.parse() 直接抛 `TypeError: invalid media type`，导致 dsh
+ * 一收请求就崩，对话引擎起不来（血泪教训见 MEMORY.md 的 dsh 段）。
+ *
+ * 对 localhost 回环（Electron 壳 ↔ 本机 dsh）而言 gzip 毫无收益（只多耗 CPU），且 dsh 的
+ * webServer.compression 库内默认值本就是 "none"——只是 dsh 的 web profile 默认把它开成了
+ * "gzip"。这里在打包阶段把 gzip 中间件的实例化强制中和掉（令 this.gzip = void 0，即不创建该
+ * 中间件），从根上移除这条崩溃路径，不影响任何其它功能。
+ * 若某未来 dsh 版本改动此行导致替换不匹配，会显式抛错（fail-fast），而不是静默漏过坏版本。
+ */
+function findDshHostWebserverLib() {
+  const out = [];
+  const suffix = path.join('@deepseek-ai', 'dsh-host-webserver', 'lib', 'index.js');
+  const walk = (d) => {
+    let es; try { es = fs.readdirSync(d, { withFileTypes: true }); } catch { return; }
+    for (const e of es) {
+      const p = path.join(d, e.name);
+      if (e.isDirectory()) walk(p);
+      else if (p.endsWith(suffix)) out.push(p);
+    }
+  };
+  walk(dshBundle);
+  return out;
+}
+
+function patchDshHostWebserver() {
+  const candidates = findDshHostWebserverLib();
+  if (candidates.length === 0) {
+    warn('未找到 dsh-host-webserver/lib/index.js，跳过 gzip 中间件中和（若 dsh 已换实现则可能无需此 patch）');
+    return;
+  }
+  // 匹配 `this.gzip = <任意含 createGzipMiddleware 的语句>;`，容忍变量名/空格差异
+  const needle = /this\.gzip\s*=[^;]*createGzipMiddleware[^;]*;/;
+  let patched = 0;
+  for (const f of candidates) {
+    let txt = fs.readFileSync(f, 'utf8');
+    if (!needle.test(txt)) {
+      log('  (跳过 %s：未匹配 gzip 实例化行，可能该副本已无需此 patch)', f);
+      continue;
+    }
+    txt = txt.replace(needle, 'this.gzip = void 0;');
+    fs.writeFileSync(f, txt);
+    patched++;
+    log('  已中和 gzip 中间件（移除 negotiator 崩溃路径）：%s', f);
+  }
+  if (patched === 0) {
+    throw new Error(
+      'dsh-host-webserver 存在但未能中和 gzip 实例化行（正则未匹配）—— 该 dsh 版本可能已改结构，' +
+      '请人工确认它不会因 Accept-Encoding 触发 negotiator 崩溃后再发版'
+    );
+  }
+  log('gzip 中间件中和完成（共 %d 处），localhost 回环不再触发 negotiator 崩溃', patched);
+}
+
 /** 下载文件到目标路径 */
 function download(url, dest) {
   log('下载:', url);
@@ -284,6 +342,7 @@ function main() {
   copyDirFollow(path.join(dshPocDir, 'dsh-home'), path.join(dshBundle, 'dsh-home'));
 
   patchDshShim();
+  patchDshHostWebserver();
 
   log('物化本地插件（@local/*）到各 profile 的 node_modules/@local（真实副本，供 copyDirSync 播种）…');
   bundleLocalPlugins();

@@ -119,6 +119,39 @@ async function rpc(method, payload) {
   return data.result.value;
 }
 
+/**
+ * 跨版本深度扫描：在 settings.describe 的整个返回结构里寻找 local-flow provider。
+ * 不同 dsh 版本的 describe 结构可能漂移（命名空间键名、嵌套层级变化），但 local-flow
+ * 的标志性特征稳定：api === 'openai-completions' 且 baseURL 指向本机 127.0.0.1:8765。
+ * 用于在「预期路径未命中」时兜底，避免把结构变化误判成本机模型消失而误杀可用版本。
+ */
+function deepFindLocalFlow(node, depth = 0) {
+  if (!node || typeof node !== 'object' || depth > 14) return null;
+  if (Array.isArray(node)) {
+    for (const item of node) {
+      const r = deepFindLocalFlow(item, depth + 1);
+      if (r) return r;
+    }
+    return null;
+  }
+  if (node.api === 'openai-completions' && typeof node.baseURL === 'string' && node.baseURL.includes('127.0.0.1:8765')) {
+    return node;
+  }
+  if (node.providers && typeof node.providers === 'object') {
+    const lf = node.providers['local-flow'];
+    if (lf) {
+      const r = deepFindLocalFlow(lf, depth + 1);
+      if (r) return r;
+    }
+  }
+  for (const k of Object.keys(node)) {
+    if (k === 'providers') continue; // 已在上面专门处理
+    const r = deepFindLocalFlow(node[k], depth + 1);
+    if (r) return r;
+  }
+  return null;
+}
+
 async function assertLocalFlowRegistered() {
   let view;
   try {
@@ -129,12 +162,17 @@ async function assertLocalFlowRegistered() {
   }
   const ns = (view && view.namespaces) || [];
   const lf = ns.find((n) => n.ns === 'llm-pi-ai');
-  if (!lf) {
-    throw new Error('llm-pi-ai 命名空间未注册：local-flow provider 配置可能不被该版本 dsh 接受，本机模型将不可见');
-  }
-  const prov = lf.value && lf.value.providers && lf.value.providers['local-flow'];
+  let prov = lf && lf.value && lf.value.providers && lf.value.providers['local-flow'];
   if (!prov) {
-    throw new Error('llm-pi-ai 已注册，但 local-flow provider 缺失：本机模型分组为空');
+    // 兜底：跨版本 settings.describe 结构可能变化，做深度扫描以防误杀
+    const found = deepFindLocalFlow(view);
+    if (found) {
+      log(`⚠ llm-pi-ai 未以预期路径出现，但深度扫描在 settings 中定位到 local-flow provider（api=${found.api} baseURL=${found.baseURL}）—— 视为已注册`);
+      prov = found;
+    }
+  }
+  if (!prov) {
+    throw new Error('llm-pi-ai 命名空间 / local-flow provider 未在 settings.describe 中出现：本机模型将不可见');
   }
   if (!prov.api || !prov.baseURL) {
     throw new Error(`local-flow provider 缺少必要字段：api=${prov.api} baseURL=${prov.baseURL}`);
