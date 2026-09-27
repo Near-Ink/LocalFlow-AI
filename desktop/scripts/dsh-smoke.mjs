@@ -94,6 +94,58 @@ async function probe(label, headers) {
   }
 }
 
+/**
+ * 增强闸门：确认 dsh 启动后，LocalFlow 的本地模型分组（llm-pi-ai / local-flow provider）
+ * 确实注册成功。这是 0.1.2 崩溃回归之外的第二层风险：新版 dsh 若改了 provider schema
+ * （例如强制要求 apiKeyEnv，或改了命名空间注册方式），我们的 local-flow 配置（指向本机不鉴权
+ * 后端，只含 api + baseURL、不含 apiKeyEnv）就可能无法注册，导致用户「升级后本机模型全消失」。
+ * 仅做崩溃存活检查抓不到这类问题，故这里额外断言。
+ *
+ * 注意：settings.describe 的返回结构在不同 dsh 版本间可能略有差异，这里做防御式解析——
+ * 只在「明确证据」下硬失败（命名空间存在但 local-flow 缺 api/baseURL），describe 本身解析
+ * 异常则降级为告警而非阻断，避免未验证代码误杀本可工作的版本。
+ */
+async function rpc(method, payload) {
+  const rpcId = 'smoke-' + Date.now();
+  const res = await fetch(`${BASE}/api/${method}`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ type: 'client-request', rpcId, method, payload }),
+    signal: AbortSignal.timeout(8000),
+  });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const data = await res.json();
+  if (!data || !data.result || !data.result.ok) throw new Error('rpc fail ' + JSON.stringify(data && data.result));
+  return data.result.value;
+}
+
+async function assertLocalFlowRegistered() {
+  let view;
+  try {
+    view = await rpc('settings.describe', {});
+  } catch (e) {
+    log(`⚠ 无法读取 settings.describe（${e.message}）—— 跳过本地模型分组断言（不阻断）`);
+    return;
+  }
+  const ns = (view && view.namespaces) || [];
+  const lf = ns.find((n) => n.ns === 'llm-pi-ai');
+  if (!lf) {
+    throw new Error('llm-pi-ai 命名空间未注册：local-flow provider 配置可能不被该版本 dsh 接受，本机模型将不可见');
+  }
+  const prov = lf.value && lf.value.providers && lf.value.providers['local-flow'];
+  if (!prov) {
+    throw new Error('llm-pi-ai 已注册，但 local-flow provider 缺失：本机模型分组为空');
+  }
+  if (!prov.api || !prov.baseURL) {
+    throw new Error(`local-flow provider 缺少必要字段：api=${prov.api} baseURL=${prov.baseURL}`);
+  }
+  const models = (prov.models || []).map((m) => m.id);
+  log(`✓ llm-pi-ai 已注册，local-flow: api=${prov.api} baseURL=${prov.baseURL} models=[${models.join(', ')}]`);
+  const deep = ns.find((n) => n.ns === 'llm-deepseek');
+  if (deep) log('✓ llm-deepseek 命名空间存在（DeepSeek 云端模型可用，含新发布模型）');
+  else log('（提示：llm-deepseek 命名空间未出现，云端模型可能需另行配置）');
+}
+
 async function main() {
   const nodeBin = findNodeBin();
   const dshEntry = findDshEntry();
@@ -186,6 +238,16 @@ async function main() {
     console.error('::error::dsh 冒烟测试失败 —— 它在处理请求时崩溃，不能进入安装包');
     console.error('---- dsh stderr 尾部 ----');
     console.error(stderrTail.join('').slice(-3000));
+    cleanup();
+    process.exit(1);
+  }
+
+  // 4) 增强校验：本地模型分组（llm-pi-ai / local-flow）是否真的注册成功
+  try {
+    await assertLocalFlowRegistered();
+  } catch (e) {
+    console.error('::error::本地模型分组校验失败：' + e.message);
+    console.error('::error::该 dsh 版本会导致升级后本机模型不可见，不能进入安装包');
     cleanup();
     process.exit(1);
   }
